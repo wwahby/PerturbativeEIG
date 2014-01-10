@@ -15,9 +15,9 @@ clear all
 % filename = 'netlists/structP.hgr';
 % filename_p = 'netlists/structP_add05.hgr';
 % filename_p = 'netlists/structP_del05a.hgr';
-filename = 'netlists/p2.hgr';
+% filename = 'netlists/p2.hgr';
 % filename_p = 'netlists/p2_add05.hgr';
-filename_p = 'netlists/p2_del05a.hgr';
+% filename_p = 'netlists/p2_del05a.hgr';
 % filename = 'netlists/biomedP.hgr';
 % filename_p = 'netlists/biomedP_add05.hgr';
 % filename_p = 'netlists/biomedP_del05a.hgr';
