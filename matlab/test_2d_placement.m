@@ -25,11 +25,11 @@ clear all
 % filename = 'netlists/industry2.hgr';
 % filename_p = 'netlists/industry2_add05.hgr';
 % filename_p = 'netlists/industry2_del05a.hgr';
-% filename = 'netlists/ibm01.hgr';
-% filename_p = 'netlists/ibm01_add05.hgr';
+filename = 'netlists/ibm01.hgr';
+filename_p = 'netlists/ibm01_add05.hgr';
 % filename_p = 'netlists/ibm01_del05a.hgr';
-filename = 'netlists/industry3.hgr';
-filename_p = 'netlists/industry3_add05.hgr';
+% filename = 'netlists/industry3.hgr';
+% filename_p = 'netlists/industry3_add05.hgr';
 % filename_p = 'netlists/industry3_del05a.hgr';
 %% Warning! Here be monsters. Have more than 3GB RAM free before you try to run these
 % filename = 'netlists/ibm10.hgr';
@@ -55,7 +55,8 @@ area_constraint = 0.45; % schmoo across all possible area splits (set this inten
 
 
 %% Run the perturbed solver
-[metrics_p times_p matrices_p eigs_p] = eig_partitioner_perturbed(filename_p,matrices.laplacian,eigs.vals,eigs.vecs,node_areas,area_constraint); % approx perturbation
+eigs_to_correct = 2:3;
+[metrics_p times_p matrices_p eigs_p] = eig_partitioner_perturbed(filename_p,matrices.laplacian,eigs.vals,eigs.vecs,node_areas,area_constraint,eigs_to_correct); % approx perturbation
 
 %% 2D placement
 
@@ -68,13 +69,20 @@ y = eigs.vecs(:,ynum);
 xpe = eigs_pe.vecs(:,xnum);
 ype = eigs_pe.vecs(:,ynum);
 
+xp = eigs_p.vecs(:,xnum);
+yp = eigs_p.vecs(:,ynum);
+
 figure(1)
 clf
-scatter(x,y,'b')
+scatter(x,y,'k')
 
 figure(2)
 clf
-scatter(xpe,ype,'r')
+scatter(xpe,ype,'b')
+
+figure(3)
+clf
+scatter(xp,yp,'r')
 
 %% lengths
 
@@ -83,19 +91,36 @@ lsq_pe = calc_l_squared(matrices_pe.adjacency,eigs_pe.vec2)
 lsq_p = calc_l_squared(matrices_p.adjacency,eigs_p.vec2)
 
 %% visualize eigs
-figure(3)
-clf
-hold all
-for i=1:length(eigs.vals)
-    plot(eigs.vecs(:,i));
-end
+% figure(3)
+% clf
+% hold all
+% for i=1:length(eigs.vals)
+%     plot(eigs.vecs(:,i));
+% end
+% 
+% figure(4)
+% clf
+% hold all
+% for i=1:length(eigs_pe.vals)
+%     plot(eigs_pe.vecs(:,i));
+% end
 
-figure(4)
-clf
-hold all
-for i=1:length(eigs_pe.vals)
-    plot(eigs_pe.vecs(:,i));
-end
+
+
+% figure(5)
+% clf
+% plot(eigs.vecs(:,2),'k');
+% hold on
+% plot(eigs_pe.vecs(:,2),'b');
+% plot(eigs_p.vecs(:,2),'r--');
+% 
+% figure(6)
+% clf
+% plot(eigs.vecs(:,3),'k');
+% hold on
+% plot(eigs_pe.vecs(:,3),'b');
+% plot(eigs_p.vecs(:,3),'r');
+
 
 %% Skew plots (just show best result from 0% skew up to full skew, i.e. compare a 40/60 split and a 60/40 split and show only the best result for skew of 0.1)
 figure(8)

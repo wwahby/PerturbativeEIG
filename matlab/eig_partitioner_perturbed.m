@@ -1,4 +1,4 @@
-function [metrics times matrices eigs] = eig_partitioner_perturbed(perturbed_netlist_file,Qorig,vals,vecs,node_areas,area_constraint)
+function [metrics times matrices eigs] = eig_partitioner_perturbed(perturbed_netlist_file,Qorig,vals,vecs,node_areas,area_constraint,eigs_to_correct)
 % Runs a modified version of the EIG algorithm
 % Uses corrections from TIPT (See Griffiths QM 2nd ed, Ch 6) to calculate
 % approximate eigenvectors and eigenvalues for perturbed system
@@ -12,6 +12,7 @@ function [metrics times matrices eigs] = eig_partitioner_perturbed(perturbed_net
 %    anything, and all nodes are assumed to have the same area
 % area_constraint - smallest or largest area (as fraction of total area)
 %    allowed for one partition
+% eigs_to_correct - vector of eigenvalue indices to apply approximate perturbation correction to
 % ====================================
 % Outputs results in container objects
 %    metrics
@@ -52,7 +53,7 @@ time_parse = toc;
 Qp = Qpe - Qorig;
 %% 1D Placement
 num_vecs_to_use = length(vecs(1,:)); % Use all the eigenvectors we're supplied
-[p1d valp vecp time_place] = place_1d_perturbed_alt(Qp,vals,vecs,num_vecs_to_use);
+[p1d vals_p vecs_p time_place] = place_1d_perturbed_alt(Qp,vals,vecs,num_vecs_to_use,eigs_to_correct);
 
 %% Partition
 [ratio_cut_min rcm_ind cutsize_min cm_ind ratio_cut_vec cutsize_vec time_partition partition_ratio] = partition1d(p1d,Ape,area_constraint,node_areas);
@@ -88,10 +89,8 @@ matrices.degree = 0; % Degree matrix not available
 matrices.adjacency = Ape;
 
 %eigenvalues
-vecs(:,2) = vecp;
-vals(2) = valp;
-eigs.vecs = vecs;
-eigs.vals = vals;
-eigs.val2 = valp; % perturbed 2nd eigenvalue
-eigs.vec2 = vecp; % perturbed 2nd eigenvector
+eigs.vecs = vecs_p;
+eigs.vals = vals_p;
+eigs.val2 = vals_p(2); % perturbed 2nd eigenvalue
+eigs.vec2 = vecs_p(:,2); % perturbed 2nd eigenvector
 
