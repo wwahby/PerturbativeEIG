@@ -42,7 +42,7 @@ filename_p = 'netlists/industry3_add05.hgr';
 
 
 %% Parameters
-num_eigs = 7; % number of eigenvalues and eigenvectors to use for the perturbed solution
+num_eigs = 10; % number of eigenvalues and eigenvectors to use for the perturbed solution
 node_areas = 1; % all nodes have unit area
 area_constraint = 0.45; % schmoo across all possible area splits (set this intentionally low so we have a minimum of 1e-3% of the nodes on one side and the rest on the other, and try all partitions between that and 1-1e5)
 
@@ -55,15 +55,6 @@ area_constraint = 0.45; % schmoo across all possible area splits (set this inten
 
 
 %% Run the perturbed solver
-% If you want to run the perturbed solver WITHOUT running the full
-% partitioner for the perturbed solution, you'll need to read in the
-% netlist with the line below
-% [Qpe Dpe Ape] = parse_hgr_sparse_alt3(filename_p);
-
-% Construct perturbation matrices (i.e. the difference between the new
-% netlist and the old netlist)
-Qp = matrices_pe.laplacian - matrices.laplacian;
-Ape = matrices_pe.adjacency;
 [metrics_p times_p matrices_p eigs_p] = eig_partitioner_perturbed(filename_p,matrices.laplacian,eigs.vals,eigs.vecs,node_areas,area_constraint); % approx perturbation
 
 %% 2D placement
@@ -91,27 +82,42 @@ lsq = calc_l_squared(matrices.adjacency,eigs.vec2)
 lsq_pe = calc_l_squared(matrices_pe.adjacency,eigs_pe.vec2)
 lsq_p = calc_l_squared(matrices_p.adjacency,eigs_p.vec2)
 
+%% visualize eigs
+figure(3)
+clf
+hold all
+for i=1:length(eigs.vals)
+    plot(eigs.vecs(:,i));
+end
+
+figure(4)
+clf
+hold all
+for i=1:length(eigs_pe.vals)
+    plot(eigs_pe.vecs(:,i));
+end
+
 %% Skew plots (just show best result from 0% skew up to full skew, i.e. compare a 40/60 split and a 60/40 split and show only the best result for skew of 0.1)
-% figure(8)
-% clf
-% plot(metrics.skew,metrics.cutsize.skew.vec,'k')
-% hold on
-% plot(metrics_pe.skew,metrics_pe.cutsize.skew.vec,'b')
-% plot(metrics_p.skew,metrics_p.cutsize.skew.vec,'r')
-% xlabel('skew')
-% ylabel('cutsize');
-% title('Cutsize')
-% xlim([0 0.5])
-% fixfigs(8,3,14,12)
-% 
-% figure(9)
-% clf
-% plot(metrics.skew,metrics.ratio_cut.skew.vec,'k')
-% hold on
-% plot(metrics_pe.skew,metrics_pe.ratio_cut.skew.vec,'b')
-% plot(metrics_p.skew,metrics_p.ratio_cut.skew.vec,'r')
-% xlabel('skew')
-% ylabel('ratio cut');
-% title('Ratio cut')
-% xlim([0 0.5])
-% fixfigs(9,3,14,12)
+figure(8)
+clf
+plot(metrics.skew,metrics.cutsize.skew.vec,'k')
+hold on
+plot(metrics_pe.skew,metrics_pe.cutsize.skew.vec,'b')
+plot(metrics_p.skew,metrics_p.cutsize.skew.vec,'r')
+xlabel('skew')
+ylabel('cutsize');
+title('Cutsize')
+xlim([0 0.5])
+fixfigs(8,3,14,12)
+
+figure(9)
+clf
+plot(metrics.skew,metrics.ratio_cut.skew.vec,'k')
+hold on
+plot(metrics_pe.skew,metrics_pe.ratio_cut.skew.vec,'b')
+plot(metrics_p.skew,metrics_p.ratio_cut.skew.vec,'r')
+xlabel('skew')
+ylabel('ratio cut');
+title('Ratio cut')
+xlim([0 0.5])
+fixfigs(9,3,14,12)
