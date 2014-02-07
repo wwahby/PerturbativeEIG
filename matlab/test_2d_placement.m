@@ -1,6 +1,6 @@
 % test eig_partitioner function
 close all
-clear all
+% clear all
 
 %% Choose input file
 % filename indicates original netlist
@@ -22,11 +22,11 @@ clear all
 % filename_p = 'netlists/biomedP_add05.hgr';
 % filename_p = 'netlists/biomedP_del05a.hgr';
 % filename_p = 'netlists/biomedP_add005.hgr';
-% filename = 'netlists/industry2.hgr';
-% filename_p = 'netlists/industry2_add05.hgr';
+filename = 'netlists/industry2.hgr';
+filename_p = 'netlists/industry2_add05.hgr';
 % filename_p = 'netlists/industry2_del05a.hgr';
-filename = 'netlists/ibm01.hgr';
-filename_p = 'netlists/ibm01_add05.hgr';
+% filename = 'netlists/ibm01.hgr';
+% filename_p = 'netlists/ibm01_add05.hgr';
 % filename_p = 'netlists/ibm01_del05a.hgr';
 % filename = 'netlists/industry3.hgr';
 % filename_p = 'netlists/industry3_add05.hgr';
@@ -75,14 +75,28 @@ yp = eigs_p.vecs(:,ynum);
 figure(1)
 clf
 scatter(x,y,'k')
+xlabel('x (au)')
+ylabel('y (au)')
+tstr = sprintf('%s - orig',filename);
+title(tstr);
 
 figure(2)
 clf
 scatter(xpe,ype,'b')
+xlabel('x (au)')
+ylabel('y (au)')
+tstr = sprintf('%s - perturbed (exact)',filename);
+title(tstr);
 
 figure(3)
 clf
 scatter(xp,yp,'r')
+xlabel('x (au)')
+ylabel('y (au)')
+tstr = sprintf('%s - perturbed (approx)',filename);
+title(tstr);
+
+fixfigs(1:3,3,14,12)
 
 %% lengths
 
@@ -123,26 +137,26 @@ lsq_p = calc_l_squared(matrices_p.adjacency,eigs_p.vec2)
 
 
 %% Skew plots (just show best result from 0% skew up to full skew, i.e. compare a 40/60 split and a 60/40 split and show only the best result for skew of 0.1)
-figure(8)
-clf
-plot(metrics.skew,metrics.cutsize.skew.vec,'k')
-hold on
-plot(metrics_pe.skew,metrics_pe.cutsize.skew.vec,'b')
-plot(metrics_p.skew,metrics_p.cutsize.skew.vec,'r')
-xlabel('skew')
-ylabel('cutsize');
-title('Cutsize')
-xlim([0 0.5])
-fixfigs(8,3,14,12)
-
-figure(9)
-clf
-plot(metrics.skew,metrics.ratio_cut.skew.vec,'k')
-hold on
-plot(metrics_pe.skew,metrics_pe.ratio_cut.skew.vec,'b')
-plot(metrics_p.skew,metrics_p.ratio_cut.skew.vec,'r')
-xlabel('skew')
-ylabel('ratio cut');
-title('Ratio cut')
-xlim([0 0.5])
-fixfigs(9,3,14,12)
+% figure(8)
+% clf
+% plot(metrics.skew,metrics.cutsize.skew.vec,'k')
+% hold on
+% plot(metrics_pe.skew,metrics_pe.cutsize.skew.vec,'b')
+% plot(metrics_p.skew,metrics_p.cutsize.skew.vec,'r')
+% xlabel('skew')
+% ylabel('cutsize');
+% title('Cutsize')
+% xlim([0 0.5])
+% fixfigs(8,3,14,12)
+% 
+% figure(9)
+% clf
+% plot(metrics.skew,metrics.ratio_cut.skew.vec,'k')
+% hold on
+% plot(metrics_pe.skew,metrics_pe.ratio_cut.skew.vec,'b')
+% plot(metrics_p.skew,metrics_p.ratio_cut.skew.vec,'r')
+% xlabel('skew')
+% ylabel('ratio cut');
+% title('Ratio cut')
+% xlim([0 0.5])
+% fixfigs(9,3,14,12)
