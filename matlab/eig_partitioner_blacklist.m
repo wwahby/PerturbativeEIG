@@ -54,8 +54,8 @@ function [metrics times matrices eigs partitions] = eig_partitioner_blacklist(fi
 
 % use the node_map to convert between condensed and full node
 % representations
-partitions{1} = {   node_map(p1d(1:cm_ind))   } ;
-partitions{2} = { node_map(p1d(cm_ind+1:end)) };
+partitions{1} = node_map(p1d(1:cm_ind)) ;
+partitions{2} = node_map(p1d(cm_ind+1:end));
 
 %% Calculate skew
 [c_min skew] = eval_with_skew(cutsize_vec,partition_ratio);

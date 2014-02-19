@@ -1,9 +1,8 @@
-% Recursive bipartitioning 
+function [terminals blocks] = recursive_bipartition_eig(filename,area_constraint)
 
-filename = 'netlists/structP.hgr';
 num_eigs = 10;
 node_areas = 1;
-area_constraint = 0.50;
+% area_constraint = 0.50;
 
 % [FIX] if we just do blacklist we will end up with laplacians
 % that have no entries in some rows/columns
@@ -12,12 +11,14 @@ area_constraint = 0.50;
 % the full representations
 
 % for each partitioning level
-next_partition_level = 1; % [FIX] temporary placeholder until we get to outer loop
+next_partition_level = 1;
 num_blocks_next_level = 1; % start by partitioning entire design into two blocks
 
 while( num_blocks_next_level > 0 )
     % Update partition level IDs
     partition_level = next_partition_level;
+    dstr = sprintf('Partition level: %d',partition_level');
+    sprintf(dstr);
     next_partition_level = partition_level + 1;
     num_blocks = num_blocks_next_level;
     
