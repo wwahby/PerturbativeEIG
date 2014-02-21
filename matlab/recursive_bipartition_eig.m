@@ -1,8 +1,12 @@
-function [terminals blocks] = recursive_bipartition_eig(filename,area_constraint)
+function [terminals blocks] = recursive_bipartition_eig(filename,area_constraint,max_partition_level)
 
 num_eigs = 10;
 node_areas = 1;
 % area_constraint = 0.50;
+
+if (max_partition_level == -1) % if we pass in -1, just do all the levels
+    max_partition_level = 1e5;
+end
 
 % [FIX] if we just do blacklist we will end up with laplacians
 % that have no entries in some rows/columns
@@ -33,7 +37,7 @@ while( num_blocks_next_level > 0 )
         end
 
         % We can only partition blocks that have two or more nodes in them
-        if ((length(nodes_in_block) > 4) || (partition_level == 1))
+        if (((length(nodes_in_block) > 4) || (partition_level == 1)) && partition_level < max_partition_level)
             
             % Allow all nodes at the first level
             % At subsequent partitioning levels, figure out which nodes to

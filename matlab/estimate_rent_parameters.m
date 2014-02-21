@@ -1,10 +1,13 @@
 close all
 clear all
 %%
-filename = 'netlists/industry2.hgr';
+filename = 'netlists/ibm01.hgr';
+area_constraint = 0.5;
+max_partition_level = 13;
 
+%%
 disp('Recursively bipartitioning netlist...')
-[terminals blocks] = recursive_bipartition_eig(filename,0.5);
+[terminals blocks] = recursive_bipartition_eig(filename,area_constraint,max_partition_level);
 %%
 disp('Bipartitioning complete!')
 
@@ -49,6 +52,8 @@ xlabel('Number of gates')
 ylabel('Number of terminals')
 set(gca,'yscale','log')
 set(gca,'xscale','log')
+ylim([1e0 2*max(med_num_terminals_vec)])
+xlim([1e0 2*max(med_num_nodes)]);
 
 %%
 fixfigs(1:2,3,14,12)
