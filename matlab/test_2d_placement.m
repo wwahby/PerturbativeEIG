@@ -10,25 +10,33 @@ close all
 % filename_p = 'netlists/fract_add05.hgr';
 % filename_p = 'netlists/fract_del05a.hgr';
 % filename = 'netlists/p1.hgr';
+% filename_p = 'netlists/p1_block.hgr';
 % filename_p = 'netlists/p1_add05.hgr';
 % filename_p = 'netlists/p1_del05a.hgr';
 % filename = 'netlists/structP.hgr';
 % filename_p = 'netlists/structP_add05.hgr';
 % filename_p = 'netlists/structP_del05a.hgr';
 % filename = 'netlists/p2.hgr';
+% filename_p = 'netlists/p2_block.hgr';
 % filename_p = 'netlists/p2_add05.hgr';
+% filename_p = 'netlists/p2_man.hgr';
 % filename_p = 'netlists/p2_del05a.hgr';
 % filename = 'netlists/biomedP.hgr';
+% filename_p = 'netlists/biomedP_block.hgr';
 % filename_p = 'netlists/biomedP_add05.hgr';
+% filename_p = 'netlists/biomedP_man.hgr';
 % filename_p = 'netlists/biomedP_del05a.hgr';
 % filename_p = 'netlists/biomedP_add005.hgr';
-filename = 'netlists/industry2.hgr';
-filename_p = 'netlists/industry2_add05.hgr';
+% filename = 'netlists/industry2.hgr';
+% filename_p = 'netlists/industry2_block.hgr';
+% filename_p = 'netlists/industry2_add05.hgr';
 % filename_p = 'netlists/industry2_del05a.hgr';
-% filename = 'netlists/ibm01.hgr';
+filename = 'netlists/ibm01.hgr';
+filename_p = 'netlists/ibm01_block.hgr';
 % filename_p = 'netlists/ibm01_add05.hgr';
 % filename_p = 'netlists/ibm01_del05a.hgr';
 % filename = 'netlists/industry3.hgr';
+% filename_p = 'netlists/industry3_block.hgr';
 % filename_p = 'netlists/industry3_add05.hgr';
 % filename_p = 'netlists/industry3_del05a.hgr';
 %% Warning! Here be monsters. Have more than 3GB RAM free before you try to run these
@@ -100,10 +108,21 @@ fixfigs(1:3,3,14,12)
 
 %% lengths
 
-lsq = calc_l_squared(matrices.adjacency,eigs.vec2)
-lsq_pe = calc_l_squared(matrices_pe.adjacency,eigs_pe.vec2)
-lsq_p = calc_l_squared(matrices_p.adjacency,eigs_p.vec2)
+lsq_x = calc_l_squared(matrices.adjacency,eigs.vecs(:,xnum));
+lsq_x_pe = calc_l_squared(matrices_pe.adjacency,eigs_pe.vecs(:,xnum));
+lsq_x_p = calc_l_squared(matrices_p.adjacency,eigs_p.vecs(:,xnum));
 
+lsq_y = calc_l_squared(matrices.adjacency,eigs.vecs(:,ynum));
+lsq_y_pe = calc_l_squared(matrices_pe.adjacency,eigs_pe.vecs(:,ynum));
+lsq_y_p = calc_l_squared(matrices_p.adjacency,eigs_p.vecs(:,ynum));
+
+lsq = lsq_x + lsq_y;
+lsq_pe = lsq_x_pe + lsq_y_pe;
+lsq_p = lsq_x_p + lsq_y_p;
+
+fprintf('\n%s\n',filename)
+fprintf('Lsq:\t\tX\t\t\t\tY\t\t\t\tTOT\t\t\t\tL/orig\t\t\ttime\t\t\tt/t_orig \n======================================================================================================\n')
+fprintf('Orig:\t\t%d\t%d\t%d\t    ---- \t\t%d\t    ----  \nPExact: \t%d\t%d\t%d\t%d\t%d\t%d \nPApprox: \t%d\t%d\t%d\t%d\t%d\t%d \n\n',lsq_x,lsq_y,lsq,times.total,lsq_x_pe,lsq_y_pe,lsq_pe,lsq_pe/lsq,times_pe.total,times_pe.total/times.total,lsq_x_p,lsq_y_p,lsq_p,lsq_p/lsq,times_p.total,times_p.total/times.total);
 %% visualize eigs
 % figure(3)
 % clf
