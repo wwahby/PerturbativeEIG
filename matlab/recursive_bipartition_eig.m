@@ -18,7 +18,7 @@ while( num_blocks_next_level > 0 )
     % Update partition level IDs
     partition_level = next_partition_level;
     dstr = sprintf('Partition level: %d',partition_level');
-    sprintf(dstr);
+    disp(dstr);
     next_partition_level = partition_level + 1;
     num_blocks = num_blocks_next_level;
     
@@ -45,25 +45,27 @@ while( num_blocks_next_level > 0 )
             end
 
             [metrics times matrices eigs partitions] = eig_partitioner_blacklist(filename,num_eigs,node_areas,area_constraint,blacklist);
-
-            if(partition_level == 1)
-                adjacency_full = matrices.adjacency;
-                all_nodes = 1:length(adjacency_full);
-                blocks{partition_level}{1} = all_nodes;
-                terminals{partition_level}{1} = 0;
-            end
             
-            % Store off partitioned nodes
-            % Assuming here that we're bipartitioning
-            blocks{next_partition_level}{2*block_ind-1} = partitions{1};
-            blocks{next_partition_level}{2*block_ind} = partitions{2};
+            if(partitions{1}(1) ~= -1) % Don't do anything for bogus partitions
+                if(partition_level == 1)
+                    adjacency_full = matrices.adjacency;
+                    all_nodes = 1:length(adjacency_full);
+                    blocks{partition_level}{1} = all_nodes;
+                    terminals{partition_level}{1} = 0;
+                end
 
-            % Get terminal count for each subblock from this partition
-            %terminals{next_partition_level} = -1*ones(1,2*num_blocks); % Initialize terminal list
-            terminals{next_partition_level}(2*block_ind-1) = get_cutsize_blacklist(partitions{1}, [partitions{2} blacklist], adjacency_full);
-            terminals{next_partition_level}(2*block_ind)   = get_cutsize_blacklist(partitions{2}, [partitions{1} blacklist], adjacency_full);
+                % Store off partitioned nodes
+                % Assuming here that we're bipartitioning
+                blocks{next_partition_level}{2*block_ind-1} = partitions{1};
+                blocks{next_partition_level}{2*block_ind} = partitions{2};
 
-            num_blocks_next_level = num_blocks_next_level + 2;
+                % Get terminal count for each subblock from this partition
+                %terminals{next_partition_level} = -1*ones(1,2*num_blocks); % Initialize terminal list
+                terminals{next_partition_level}(2*block_ind-1) = get_cutsize_blacklist(partitions{1}, [partitions{2} blacklist], adjacency_full);
+                terminals{next_partition_level}(2*block_ind)   = get_cutsize_blacklist(partitions{2}, [partitions{1} blacklist], adjacency_full);
+
+                num_blocks_next_level = num_blocks_next_level + 2;
+            end
         end
     end
 end
