@@ -46,21 +46,39 @@ function [metrics times matrices eigs partitions] = eig_partitioner_blacklist(fi
 %% Parse HGR and construct Q
 [Q vals vecs D A time_parse time_eig node_map] = construct_laplacian_from_hgr_blacklist(filename,num_eigs,blacklist);
 
-%% 1D Placement
-[p1d val2 vec2 time_place] = place_1d(vals,vecs);
+if(length(vals) > 1)
+    %% 1D Placement
+    [p1d val2 vec2 time_place] = place_1d(vals,vecs);
 
-%% Partition
-[ratio_cut_min rcm_ind cutsize_min cm_ind ratio_cut_vec cutsize_vec time_partition partition_ratio] = partition1d(p1d,A,area_constraint,node_areas);
+    %% Partition
+    [ratio_cut_min rcm_ind cutsize_min cm_ind ratio_cut_vec cutsize_vec time_partition partition_ratio] = partition1d(p1d,A,area_constraint,node_areas);
 
-% use the node_map to convert between condensed and full node
-% representations
-partitions{1} = node_map(p1d(1:cm_ind)) ;
-partitions{2} = node_map(p1d(cm_ind+1:end));
+    % use the node_map to convert between condensed and full node
+    % representations
+    partitions{1} = node_map(p1d(1:cm_ind)) ;
+    partitions{2} = node_map(p1d(cm_ind+1:end));
 
-%% Calculate skew
-[c_min skew] = eval_with_skew(cutsize_vec,partition_ratio);
-[rc_min skew] = eval_with_skew(ratio_cut_vec,partition_ratio);
-
+    %% Calculate skew
+    [c_min skew] = eval_with_skew(cutsize_vec,partition_ratio);
+    [rc_min skew] = eval_with_skew(ratio_cut_vec,partition_ratio);
+else
+    ratio_cut_vec = -1;
+    ratio_cut_min = -1;
+    rcm_ind = -1;
+    rc_min = -1;
+    cutsize_vec = -1;
+    cutsize_min = -1;
+    cm_ind = -1;
+    c_min = -1;
+    partition_ratio = -1;
+    skew = -1;
+    time_partition = -1;
+    time_place = -1;
+    val2 = -1;
+    vec2 = -1;
+    partitions{1} = -1;
+    partitions{2} = -1;
+end
 %% Gather outputs
 
 % Metrics (ratio cut, cutsize, and other useful data)
