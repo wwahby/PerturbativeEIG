@@ -1,9 +1,9 @@
 close all
 clear all
 %%
-filename = 'netlists/p2.hgr';
+filename = 'netlists/industry2.hgr';
 area_constraint = 0.5;
-max_partition_level = 5;
+max_partition_level = 9;
 
 %%
 disp('Recursively bipartitioning netlist...')
@@ -54,6 +54,39 @@ set(gca,'yscale','log')
 set(gca,'xscale','log')
 ylim([1e0 2*max(med_num_terminals_vec)])
 xlim([1e0 2*max(med_num_nodes)]);
+fixfigs(1:2,3,14,12)
+%%
+
+back_ind = 2;
+[k p] = calc_rent_params(med_num_terminals_vec(end),med_num_nodes(end),med_num_terminals_vec(end-back_ind),med_num_nodes(end-back_ind));
+k
+p
+
+%% estimate number of tsvs used for each partition level
+
+tsvs_actual{1} = 0;
+tsvs_estimated{1} = 0;
+total_nodes = length(blocks{1}{1});
+for cind = 2:length(cuts)
+    num_tiers = length(cuts{cind});
+    nt_tot = zeros(1,num_tiers);
+    for i = 1:num_tiers
+        nt_tot(i) = sum(sum( cuts{cind}(1:i,i:end) ));
+    end
+    tsvs_actual{cind} = nt_tot;
+    
+    [nt_max nt_tot nt_to nt_through Tacmat] = estimate_tsvs_required(total_nodes,num_tiers,k,p);
+    tsvs_estimated{cind} = nt_tot;
+end
 
 %%
-fixfigs(1:2,3,14,12)
+figure(3)
+clf
+set(gca,'ColorOrder',[0 0 1; 1 0 0]);
+set(gca,'LineStyleOrder','-|--|-.|:');
+hold all
+for cind = 2:length(cuts)
+    plot(tsvs_estimated{cind})
+    plot(tsvs_actual{cind})
+end
+fixfigs(3,3,14,12)
