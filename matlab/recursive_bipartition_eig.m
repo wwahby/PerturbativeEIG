@@ -1,4 +1,4 @@
-function [terminals blocks] = recursive_bipartition_eig(filename,area_constraint,max_partition_level)
+function [terminals blocks cuts] = recursive_bipartition_eig(filename,area_constraint,max_partition_level)
 
 num_eigs = 10;
 node_areas = 1;
@@ -18,7 +18,7 @@ end
 next_partition_level = 1;
 num_blocks_next_level = 1; % start by partitioning entire design into two blocks
 
-while( num_blocks_next_level > 0 )
+while( (num_blocks_next_level > 0) && (next_partition_level < max_partition_level ) )
     % Update partition level IDs
     partition_level = next_partition_level;
     dstr = sprintf('Partition level: %d',partition_level');
@@ -37,7 +37,7 @@ while( num_blocks_next_level > 0 )
         end
 
         % We can only partition blocks that have two or more nodes in them
-        if (((length(nodes_in_block) > 4) || (partition_level == 1)) && partition_level < max_partition_level)
+        if ( ((length(nodes_in_block) > 8) || (partition_level == 1)) && (partition_level < max_partition_level) )
             
             % Allow all nodes at the first level
             % At subsequent partitioning levels, figure out which nodes to
@@ -55,7 +55,7 @@ while( num_blocks_next_level > 0 )
                     adjacency_full = matrices.adjacency;
                     all_nodes = 1:length(adjacency_full);
                     blocks{partition_level}{1} = all_nodes;
-                    terminals{partition_level}{1} = 0;
+                    terminals{partition_level}(1) = 0;
                 end
 
                 % Store off partitioned nodes
@@ -72,4 +72,28 @@ while( num_blocks_next_level > 0 )
             end
         end
     end
+    
+    % Calculate number of cuts between each set of subblocks
+    num_blocks_this_level = length(blocks{partition_level});
+    
+    if (partition_level == 1)
+        cuts{partition_level}(1) = 0;
+    else
+        cuts{partition_level} = zeros(num_blocks_this_level,num_blocks_this_level);
+        for start_block_ind = 1:num_blocks_this_level
+            start_block = blocks{partition_level}{start_block_ind};
+
+            for other_block_ind = (start_block_ind+1):num_blocks_this_level
+                other_block = blocks{partition_level}{other_block_ind};
+                rest_of_nodes = construct_blacklist([start_block other_block],all_nodes);
+
+                cuts{partition_level}(start_block_ind,other_block_ind) = get_cutsize_between_subblocks(start_block, other_block, rest_of_nodes, adjacency_full);
+                cuts{partition_level}(other_block_ind,start_block_ind) = cuts{partition_level}(start_block_ind,other_block_ind);
+            end
+        end
+    end
+            
 end
+
+        
+        

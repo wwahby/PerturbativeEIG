@@ -1,13 +1,13 @@
 close all
 clear all
 %%
-filename = 'netlists/ibm01.hgr';
+filename = 'netlists/p2.hgr';
 area_constraint = 0.5;
-max_partition_level = 13;
+max_partition_level = 5;
 
 %%
 disp('Recursively bipartitioning netlist...')
-[terminals blocks] = recursive_bipartition_eig(filename,area_constraint,max_partition_level);
+[terminals blocks cuts] = recursive_bipartition_eig(filename,area_constraint,max_partition_level);
 %%
 disp('Bipartitioning complete!')
 
