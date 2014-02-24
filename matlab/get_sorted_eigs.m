@@ -37,9 +37,18 @@ vecs = vecs(:,posvals);
 bigvals = (vals > 1e-5);
 
 % we need to keep the first "zero" eigenvalue
-if(bigvals(1) == 0)
-    ind = find(bigvals == 0,1,'last');
-    bigvals(ind) = 1;
+if(isempty(bigvals)) % do nothing if no good eigenvalues
+    vals = -1;
+    vecs = -1;
+else
+    if(bigvals(1) == 0)
+        ind = find(bigvals == 0,1,'last');
+        bigvals(ind) = 1;
+    end
+    
+    vals = vals(bigvals);
+    vecs = vecs(:,bigvals);
+    
 end
-vals = vals(bigvals);
-vecs = vecs(:,bigvals);
+
+
