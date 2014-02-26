@@ -18,7 +18,7 @@ end
 next_partition_level = 1;
 num_blocks_next_level = 1; % start by partitioning entire design into two blocks
 
-while( (num_blocks_next_level > 0) && (next_partition_level < max_partition_level ) )
+while( (num_blocks_next_level > 0) && (next_partition_level <= max_partition_level ) )
     % Update partition level IDs
     partition_level = next_partition_level;
     dstr = sprintf('Partition level: %d',partition_level');
