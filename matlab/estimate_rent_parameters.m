@@ -1,9 +1,9 @@
 close all
 clear all
 %%
-filename = 'netlists/ibm01.hgr';
+filename = 'netlists/industry3.hgr';
 area_constraint = 0.5;
-max_partition_level = 7;
+max_partition_level = 11;
 
 %%
 disp('Recursively bipartitioning netlist...')
@@ -127,7 +127,7 @@ clf
 plot(num_tiers_vec,tsvs_estimated_tot,'k')
 hold on
 plot(num_tiers_vec,tsvs_actual_tot,'r')
-xlabel('Partitioning level')
+xlabel('Number of tiers')
 ylabel('Total TSVs in design')
 set(gca,'yscale','log')
 %set(gca,'xscale','log')
