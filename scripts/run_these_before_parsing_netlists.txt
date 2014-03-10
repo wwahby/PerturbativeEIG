@@ -1,11 +1,13 @@
 # remove extra linebreaks
-:%s/\n\s\s\s+/ /g
+:%s/\n\s\s\s\+/ /g
 
-# remove wire numbers
-:%s/\[\d\+\]//g
+
 
 # remove random backslashes
 :%s/\\//
 
 # remove wire number declarations
 :%s/\[\d\+:\d\+\] //g
+
+# remove wire numbers
+:%s/\[\d\+\]//g
