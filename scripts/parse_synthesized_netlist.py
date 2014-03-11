@@ -96,6 +96,8 @@ for line_ind in range(len(lines)):
 				wire_ind = wire_dict[wire_connected] # we're assuming that all of the wires were listed in the header, so if we've gotten this far we don't need to worry about adding new wires to the dictionary
 				wire_connection_list[wire_ind].append(component_ind)
 
+
+
 num_nets = len(wire_connection_list)
 num_cells = len(component_dict)
 
@@ -103,7 +105,7 @@ num_cells = len(component_dict)
 outfile = open(outfile_name,'w')
 outfile.write(str(num_nets) + delim + str(num_cells) + '\n') # print header info
 for net_ind in range(num_nets):
-	if (len(wire_connection_list[net_ind]) > 0):
+	if (len(wire_connection_list[net_ind]) > 1):
 		line_out = delim.join(map(str,wire_connection_list[net_ind]))
 		outfile.write(line_out + '\n')
 
