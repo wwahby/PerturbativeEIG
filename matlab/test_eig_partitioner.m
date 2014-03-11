@@ -28,9 +28,11 @@ clear all
 % filename = 'netlists/ibm01.hgr';
 % filename_p = 'netlists/ibm01_add05.hgr';
 % filename_p = 'netlists/ibm01_del05a.hgr';
-filename = 'netlists/industry3.hgr';
-filename_p = 'netlists/industry3_add05.hgr';
+% filename = 'netlists/industry3.hgr';
+% filename_p = 'netlists/industry3_add05.hgr';
 % filename_p = 'netlists/industry3_del05a.hgr';
+filename = 'netlists/synnet_no1_2.hgr';
+filename_p = 'netlists/synnet_no1_mod_2.hgr';
 %% Warning! Here be monsters. Have more than 3GB RAM free before you try to run these
 % filename = 'netlists/ibm10.hgr';
 % filename_p = 'netlists/ibm10_add01.hgr';

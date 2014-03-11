@@ -1,15 +1,17 @@
 close all
 clear all
 %%
-filename = 'netlists/industry3.hgr';
+filename = 'netlists/synnet_no1_2.hgr';
 area_constraint = 0.5;
 max_partition_level = 11;
 
 %%
 disp('Recursively bipartitioning netlist...')
 [terminals blocks cuts] = recursive_bipartition_eig(filename,area_constraint,max_partition_level);
-%%
 disp('Bipartitioning complete!')
+
+%%
+
 
 figure(1)
 clf
@@ -68,6 +70,7 @@ p
 tsvs_actual{1} = 0;
 tsvs_estimated{1} = 0;
 tsvs_actual_tot = zeros(1,length(cuts));
+tsvs_estimated_to = zeros(1,length(cuts));
 tsvs_estimated_tot = zeros(1,length(cuts));
 total_nodes = length(blocks{1}{1});
 num_tiers_vec = ones(1,length(cuts));
@@ -101,6 +104,7 @@ for cind = 2:length(cuts)
     [nt_max nt_tot nt_to nt_through Tacmat] = estimate_tsvs_required(total_nodes,num_tiers,k,p);
     tsvs_estimated{cind} = nt_tot;
     tsvs_estimated_tot(cind) = sum(nt_tot);
+    tsvs_estimated_to(cind) = sum(nt_to);
 end
 
 %%
@@ -117,18 +121,30 @@ for cind = 4:6%length(cuts)
     plot(tsvs_actual{cind})
 end
 
-xlabel('Number of tiers')
+xlabel('Layer number')
 ylabel('Number of TSVs')
 fixfigs(3,3,14,12)
 
 
-figure(4)
+% figure(4)
+% clf
+% plot(num_tiers_vec,tsvs_estimated_tot,'k')
+% hold on
+% plot(num_tiers_vec,tsvs_actual_tot,'r')
+% xlabel('Number of tiers')
+% ylabel('Total TSVs in design')
+% set(gca,'yscale','log')
+% set(gca,'xscale','log')
+% fixfigs(4,3,14,12)
+
+figure(5)
 clf
 plot(num_tiers_vec,tsvs_estimated_tot,'k')
 hold on
+plot(num_tiers_vec,tsvs_estimated_to,'k:')
 plot(num_tiers_vec,tsvs_actual_tot,'r')
 xlabel('Number of tiers')
 ylabel('Total TSVs in design')
 set(gca,'yscale','log')
-%set(gca,'xscale','log')
-fixfigs(4,3,14,12)
+set(gca,'xscale','log')
+fixfigs(5,3,14,12)
