@@ -3,7 +3,7 @@ clear all
 %%
 filename = 'netlists/synnet_no1_2.hgr';
 area_constraint = 0.5;
-max_partition_level = 11;
+max_partition_level = 9;
 
 %%
 disp('Recursively bipartitioning netlist...')
