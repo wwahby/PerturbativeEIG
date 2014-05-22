@@ -20,6 +20,7 @@ delim = " "	# input file delimeter. Must be a single character
 infile_name = sys.argv[1]
 outfile_name_histo = infile_name + ".histo"
 outfile_name_percent = infile_name + ".norm"
+outfile_name_rawsize = infile_name + ".rawsize"
 
 # Read input file
 infile = open(infile_name,'r')
@@ -39,10 +40,13 @@ num_nodes = int(n[1])
 
 histogram = np.zeros(num_nodes)	# Could have one net with all the nodes!
 
+outfile = open(outfile_name_rawsize,'w')
 for i in range(1,len(lines)):
 	exploded = lines[i].split(delim)
 	num_nodes_this_net = len(exploded)
 	histogram[num_nodes_this_net-1] = histogram[num_nodes_this_net-1] + 1 #-1 because index 0 corresponds to nets with one node
+	outfile.write(str(num_nodes_this_net) + '\n')
+outfile.close()
 
 
 histogram = np.trim_zeros(histogram,'b') # remove all the trailing zero elements
