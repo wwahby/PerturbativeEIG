@@ -15,8 +15,8 @@ clear all
 % filename = 'netlists/structP.hgr';
 % filename_p = 'netlists/structP_add05.hgr';
 % filename_p = 'netlists/structP_del05a.hgr';
-% filename = 'netlists/p2.hgr';
-% filename_p = 'netlists/p2_add05.hgr';
+filename = 'netlists/p2.hgr';
+filename_p = 'netlists/p2_add05.hgr';
 % filename_p = 'netlists/p2_del05a.hgr';
 % filename = 'netlists/biomedP.hgr';
 % filename_p = 'netlists/biomedP_add05.hgr';
@@ -31,8 +31,8 @@ clear all
 % filename = 'netlists/industry3.hgr';
 % filename_p = 'netlists/industry3_add05.hgr';
 % filename_p = 'netlists/industry3_del05a.hgr';
-filename = 'netlists/synnet_no1_2.hgr';
-filename_p = 'netlists/synnet_no1_mod_2.hgr';
+% filename = 'netlists/synnet_no1_2.hgr';
+% filename_p = 'netlists/synnet_no1_mod_2.hgr';
 %% Warning! Here be monsters. Have more than 3GB RAM free before you try to run these
 % filename = 'netlists/ibm10.hgr';
 % filename_p = 'netlists/ibm10_add01.hgr';
