@@ -65,10 +65,10 @@ for split_ind = split_indices
 end
 
 %% Get min cutsize and ratio cut, and their corresponding partition points
-[cutsize_min cm_ind] = min(cutsize);
+[cutsize_min cm_ind] = min(cutsize_vec);
 cm_ind = cm_ind + split_ind_min-1;
 
-[ratio_cut_min rcm_ind] = min(ratio_cut);
+[ratio_cut_min rcm_ind] = min(ratio_cut_vec);
 rcm_ind = rcm_ind + split_ind_min-1;
 
 time_partition = toc;
