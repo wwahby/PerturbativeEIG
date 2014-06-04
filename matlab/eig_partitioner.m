@@ -69,6 +69,7 @@ metrics.cutsize.min_ind = cm_ind;
 metrics.cutsize.skew.vec = c_min;
 metrics.partition_ratio = partition_ratio;
 metrics.skew = skew;
+metrics.placement_1d = p1d;
 
 % timing data
 times.partition = time_partition;
