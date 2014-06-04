@@ -15,3 +15,4 @@ function cutsize = get_cutsize_alt(A,split_ind)
 % Sum up all entries in the top-right quadrant, which represents
 % inter-partition connections
 cutsize = sum(sum( A(1:split_ind,split_ind+1:end) ));
+cutsize = full(cutsize);
