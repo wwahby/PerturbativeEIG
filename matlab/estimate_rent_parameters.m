@@ -1,7 +1,8 @@
 close all
 clear all
 %%
-filename = 'netlists/synnet_no1_2.hgr';
+%filename = 'netlists/synnet_no1_2.hgr';
+filename = 'netlists/p2.hgr';
 area_constraint = 0.5;
 max_partition_level = 9;
 
@@ -13,16 +14,18 @@ disp('Bipartitioning complete!')
 %%
 
 
-figure(1)
-clf
-hold on
 
 med_num_nodes = zeros(1,length(blocks));
 med_num_terminals_vec = zeros(1,length(blocks));
+num_nodes_long = [];
+num_terminals_long = [];
+
 for bind = 2:length(blocks)
     
     num_nodes = zeros(1,length(blocks{bind}) );
     num_terminals = zeros(1,length(blocks{bind}) );
+    
+    
     
     for nind = 1:length(blocks{bind})
         
@@ -34,17 +37,45 @@ for bind = 2:length(blocks)
         %scatter(num_nodes(nind),med_num_terminals,'r','MarkerFaceColor','r')
     end
     
+    num_nodes_long = [num_nodes_long num_nodes];
+    num_terminals_long = [num_terminals_long num_terminals];
+    
     med_num_nodes(bind) = median(num_nodes);
     med_num_terminals_vec(bind) = median(num_terminals);
 end
 
+%% Estimate Rent Parameters
+
+back_ind = 2;
+[ks ps] = calc_rent_params(med_num_terminals_vec(end),med_num_nodes(end),med_num_terminals_vec(end-back_ind),med_num_nodes(end-back_ind));
+ks
+ps
+
+[kf pf kvec pvec] = fit_rent_params(med_num_nodes, med_num_terminals_vec);
+kf
+pf
+
+k = kf;
+p = pf;
+
+%%
+
+ts = ks .* med_num_nodes.^ps;
+tf = kf .* med_num_nodes.^pf;
+
+figure(1)
+clf
+hold on
+scatter(num_nodes_long,num_terminals_long,'b','MarkerFaceColor','b')
+scatter(med_num_nodes,med_num_terminals_vec,'r','MarkerFaceColor','r')
+plot(med_num_nodes,ts,'k-')
+plot(med_num_nodes,tf,'g:')
 xlabel('Number of gates')
 ylabel('Number of terminals')
-       
 set(gca,'yscale','log')
 set(gca,'xscale','log')
 
-%%
+
 figure(2)
 clf
 hold on
@@ -57,12 +88,6 @@ set(gca,'xscale','log')
 ylim([1e0 2*max(med_num_terminals_vec)])
 xlim([1e0 2*max(med_num_nodes)]);
 fixfigs(1:2,3,14,12)
-%%
-
-back_ind = 2;
-[k p] = calc_rent_params(med_num_terminals_vec(end),med_num_nodes(end),med_num_terminals_vec(end-back_ind),med_num_nodes(end-back_ind));
-k
-p
 
 %% estimate number of tsvs used for each partition level
 
@@ -113,12 +138,14 @@ clf
 set(gca,'ColorOrder',[0 0 1; 1 0 0]);
 set(gca,'LineStyleOrder','-|--|-.|:');
 
+%set(gca,'ColorOrder',[0 0 1; 0 0 1; 1 0 0; 1 0 0; 0 1 0; 0 1 0]);
 set(gca,'ColorOrder',[0 0 0; 0 0 1; 0 0 0; 1 0 0; 0 0 0; 0 1 0]);
-set(gca,'LineStyleOrder','-')
+%set(gca,'ColorOrder',[0 0 1; 0 0 0; 1 0 0; 0 0 0; 0 1 0; 0 0 0]);
+%set(gca,'LineStyleOrder','-')
 hold all
 for cind = 4:6%length(cuts)
-    plot(tsvs_estimated{cind})
-    plot(tsvs_actual{cind})
+    plot(tsvs_estimated{cind},'-')
+    plot(tsvs_actual{cind},'-')
 end
 
 xlabel('Layer number')
@@ -139,12 +166,28 @@ fixfigs(3,3,14,12)
 
 figure(5)
 clf
-plot(num_tiers_vec,tsvs_estimated_tot,'k')
+plot(num_tiers_vec,tsvs_estimated_tot,'r')
 hold on
-plot(num_tiers_vec,tsvs_estimated_to,'k:')
-plot(num_tiers_vec,tsvs_actual_tot,'r')
+plot(num_tiers_vec,tsvs_estimated_to,'r:')
+plot(num_tiers_vec,tsvs_actual_tot,'k')
 xlabel('Number of tiers')
 ylabel('Total TSVs in design')
 set(gca,'yscale','log')
 set(gca,'xscale','log')
 fixfigs(5,3,14,12)
+
+
+figure(6)
+clf
+scatter(kvec,pvec)
+% set(gca,'yscale','log')
+% set(gca,'xscale','log')
+
+figure(7)
+clf
+plot(pvec)
+
+figure(8)
+clf
+plot(kvec)
+set(gca,'yscale','log')
