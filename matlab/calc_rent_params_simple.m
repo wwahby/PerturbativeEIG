@@ -1,4 +1,4 @@
-function [k p] = calc_rent_params(T1,N1,T2,N2)
+function [k p] = calc_rent_params_simple(T1,N1,T2,N2)
 
 p = log(T1/T2)/log(N1/N2);
 
