@@ -73,6 +73,8 @@ p = pt;
 %cuts_orig = cuts;
 tsvs_actual{1} = 0;
 tsvs_estimated{1} = 0;
+tsvs_to{1} = 0;
+tsvs_to_2{1} = 0;
 tsvs_actual_tot = zeros(1,length(cuts));
 tsvs_estimated_to = zeros(1,length(cuts));
 tsvs_estimated_tot = zeros(1,length(cuts));
@@ -111,10 +113,12 @@ for cind = 2:length(cuts)
     [nt_max, nt_tot, nt_to, nt_through, Tacmat] = estimate_tsvs_required(total_nodes,num_tiers,kf,pf);
     [nt_max_2, nt_tot_2, nt_to_2, nt_through_2, Tacmat_2] = estimate_tsvs_required(total_nodes,num_tiers,kt,pt);
     tsvs_estimated{cind} = nt_tot;
+    tsvs_to{cind} = nt_to;
     tsvs_estimated_tot(cind) = sum(nt_tot);
     tsvs_estimated_to(cind) = sum(nt_to);
     
     tsvs_estimated_2{cind} = nt_tot_2;
+    tsvs_to_2{cind} = nt_to_2;
     tsvs_estimated_tot_2(cind) = sum(nt_tot_2);
     tsvs_estimated_to_2(cind) = sum(nt_to_2);
 end
@@ -156,8 +160,8 @@ xlabel('Number of gates')
 ylabel('Number of terminals')
 set(gca,'yscale','log')
 set(gca,'xscale','log')
-ylim([1e0 2*max(med_num_terminals_vec)])
-xlim([1e0 2*max(med_num_nodes)]);
+%ylim([0.2*min(med_num_terminals_vec) 5*max(med_num_terminals_vec)])
+%xlim([0.2*min(med_num_nodes) 5*max(med_num_nodes)]);
 fixfigs(2,3,14,12)
 
 
@@ -167,48 +171,29 @@ fixfigs(2,3,14,12)
 % TSV/MIV Prediction vs actual cutsize at each step
 figure(3)
 clf
-set(gca,'ColorOrder',[0 0 0]);
-set(gca,'LineStyleOrder','-')
-hold all
-cvec = 4:6;
-for cind = cvec%length(cuts)
-    plot(tsvs_estimated{cind},'-')
-end
-
-hold off
-set(gca,'ColorOrder',[0.2 0.2 0.2]);
-set(gca,'LineStyleOrder','-')
-hold all
-for cind = cvec
-    plot(tsvs_estimated_2{cind},'-')
-end
-
-
-hold off
-set(gca,'LineStyleOrder','-|--|-.|:')
-set(gca,'ColorOrder',[0 0 1; 0 1 0; 1 0 0]);
-hold all
-for cind = cvec
-    plot(tsvs_actual{cind},'-')
-end
-
-
+hold on
+cind = 5;
+plot(tsvs_actual{cind},'k-')
+plot(tsvs_to{cind},'r-')
+plot(tsvs_estimated{cind},'b-')
 
 xlabel('Layer number')
 ylabel('Number of TSVs')
+%ylim([0 400])
 fixfigs(3,3,14,12)
 
-% Comparison of Via estimation methods (tot, vs to-only) and actual cutsize
+%% Comparison of Via estimation methods (tot, vs to-only) and actual cutsize
 figure(5)
 clf
 plot(num_tiers_vec,tsvs_estimated_tot,'b')
 hold on
-plot(num_tiers_vec,tsvs_estimated_tot_2,'g')
+%plot(num_tiers_vec,tsvs_estimated_tot_2,'g')
 plot(num_tiers_vec,tsvs_estimated_to,'r')
 plot(num_tiers_vec,tsvs_actual_tot,'k')
+xlim([2 16])
 xlabel('Number of tiers')
 ylabel('Total TSVs in design')
-set(gca,'yscale','log')
+%set(gca,'yscale','log')
 set(gca,'xscale','log')
 fixfigs(5,3,14,12)
 
