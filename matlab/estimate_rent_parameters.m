@@ -2,7 +2,7 @@ close all
 clear all
 %%
 %filename = 'netlists/synnet_no1_2.hgr';
-filename = 'netlists/mesh_4d_open_10.hgr';
+filename = 'netlists/mesh_4d_open_8.hgr';
 area_constraint = 0.5;
 max_partition_level = 8;
 
