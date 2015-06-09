@@ -1,5 +1,3 @@
-import re # regex
-import sys # for grabbing input args
 import numpy as np # array handling
 import eig_support as es
 import argparse
@@ -22,13 +20,17 @@ def main():
 		run_perturbed = False
 
 	num_eigs = args.num_eigs
-	delim = args.delim	# input file delimeter. Must be a single character
+	delimiter = args.delim	# input file delimeter. Must be a single character
 
-	Q = es.parse_hgr(infile_name,delim)
+	Q = es.parse_hgr_sparse(infile_name,delim=delimiter, index_offset=1)
 	p1d = es.partition_1d(Q)
 
-	print("Exact partition\n==============\n" + str(p1d))
-	print()
+	#print("Exact partition\n==============\n" + str(p1d))
+	#print()
+
+	# Require parsed netlist
+	#block_map = es.construct_component_map(infile_name + ".dict")
+	#es.write_partitions(p1d, block_map, infile_name + ".part")
 
 
 	if (run_perturbed):
