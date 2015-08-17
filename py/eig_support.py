@@ -19,7 +19,7 @@ class map_1to1:
 		return self.d[k]
 
 
-def parse_hgr(infile_name,delim):
+def parse_hgr(infile_name, delim=" ", index_offset=0):
 	# Read input file
 	infile = open(infile_name,'r')
 	lines = infile.readlines()
@@ -47,18 +47,17 @@ def parse_hgr(infile_name,delim):
 			#print(net_weight)
 
 			for i in range(len(line_arr)):
-				i_cell = int(line_arr[i])-1 # -1 since hgr file starts with index 1, and python starts with index 0
+				i_cell = int(line_arr[i])-index_offset # -1 since hgr file starts with index 1, and python starts with index 0
 				Q[i_cell,i_cell] = Q[i_cell,i_cell] + net_weight*(net_cells-1) # Add up connected net weights on diagonals (constructing D)
 
 				for j in range(i+1,len(line_arr)):
-					j_cell = int(line_arr[j])-1
+					j_cell = int(line_arr[j])-index_offset
 					Q[i_cell,j_cell] = Q[i_cell,j_cell] - net_weight
 					Q[j_cell,i_cell] = Q[j_cell,i_cell] - net_weight
 
 	return Q
 
 def parse_hgr_sparse(infile_name, delim=" ", index_offset=0):
-	# [FIX]  -- NEED TO ACTUALLY IMPLEMENT SPARSE MATRICES -- SO FAR JUST COPIED THE OTHER METHOD
 	# Read input file
 	infile = open(infile_name,'r')
 	lines = infile.readlines()
@@ -73,14 +72,19 @@ def parse_hgr_sparse(infile_name, delim=" ", index_offset=0):
 	num_nets = int(n[0])
 	num_cells = int(n[1])
 
-	# [FIX] Use sparse matrix handling
-	#Q = np.zeros((num_cells,num_cells)) # initialize laplacian matrix
 
 	## Process the HGR file
 	# Declare empty arrays to hold index and cell data for COO sparse matrix construction
 	# Diagonals
-	#di = []
-	#ds = []
+	di = []
+	ds = []
+
+	# Adjacency
+	a_i = []
+	a_j = []
+	a_s = []
+
+	# Overall
 	qi = []
 	qj = []
 	qs = []
@@ -99,6 +103,9 @@ def parse_hgr_sparse(infile_name, delim=" ", index_offset=0):
 				#ds.append(net_weight*(net_cells-1)) # Duplicate ij entries will be accumulated during matrix construction, so we don't need to worry about them right now
 				#di.append(i_cell)
 				# Diagonal, so i and j are the same here
+				ds.append(net_weight*(net_cells-1))
+				di.append(i_cell)
+				#dj.append(i_cell) # Not necessary since symmetric
 				qs.append(net_weight*(net_cells-1))
 				qi.append(i_cell)
 				qj.append(i_cell)
@@ -108,19 +115,30 @@ def parse_hgr_sparse(infile_name, delim=" ", index_offset=0):
 					qi.append(i_cell)
 					qj.append(j_cell)
 					qs.append(-net_weight)
+					
+					a_i.append(i_cell)
+					a_j.append(j_cell)
+					a_s.append(net_weight)
 
 					# Matrix is symmetric!
 					qi.append(j_cell)
 					qj.append(i_cell)
 					qs.append(-net_weight)
+					
+					a_i.append(j_cell)
+					a_j.append(i_cell)
+					a_s.append(net_weight)
 
-					#Q[i_cell,j_cell] = Q[i_cell,j_cell] - net_weight
-					#Q[j_cell,i_cell] = Q[j_cell,i_cell] - net_weight
+	#Q = sps.coo_matrix( (qs,(qi, qj)), shape=(num_cells,num_cells) )
+	#Q = Q.tocsc()
 
-	Q = sps.coo_matrix( (qs,(qi, qj)), shape=(num_cells,num_cells) )
-	Q.tocsc()
+	D = sps.coo_matrix( (ds, (di, di)), shape=(num_cells,num_cells) )
+	A = sps.coo_matrix( (a_s, (a_i, a_j)), shape=(num_cells,num_cells) )
+	D = D.tocsc()
+	A = A.tocsc()
+	Q = D - A
 
-	return Q
+	return (Q, D, A)
 
 
 
@@ -131,10 +149,10 @@ def partition_1d(Q, eigenval_cutoff=1e-5, num_eigs = 10):
 	# Sparse eigenvalue solver sometimes gives us spurious small eigs. We need to sift them out before we do any processing
 	sorted_vals_raw = np.argsort(vals)
 	sorted_vals = []
-	sorted_vals.append(sorted_vals_raw[0]) # First eigenvalue of the laplacian matrix will always be 0. spe
+	sorted_vals.append( np.min(np.abs(vals)) ) # First eigenvalue of the laplacian matrix will always be 0. spe
 	for el in sorted_vals_raw:
-		if (el > eigenval_cutoff):
-			sorted_vals.append(el)
+		if (vals[el] > eigenval_cutoff):
+			sorted_vals.append(vals[el])
 
 	if ( len(sorted_vals) == 1):
 		print("partition_1d: Error! Not enough valid eigenvalues. Rerun with num_eigs > 10")
@@ -143,12 +161,61 @@ def partition_1d(Q, eigenval_cutoff=1e-5, num_eigs = 10):
 	vec2 = vecs[:,sorted_vals[1]]
 
 	partition1d = np.argsort(vec2)
-	return partition1d
-	
-def partition_1d_perturbed(Q,Qp,n):
-	(vals, vecs) = la.eigh(Q) # Q is guaranteed to be hermitian since it is a real symmetric matrix
-	sorted_vals = np.argsort(vals)
+	return (partition1d, sorted_vals, vals)
 
+
+def calc_cutsize_bipart(adjacency_mat, partition_order, area_balance):
+	# Reorder the matrix in partition order
+	adj_reord = adjacency_mat[:, partition_order]
+	adj_reord = adj_reord[partition_order,:]
+
+	# [FIX] Need to properly work out indexing for array slice
+	if (area_balance > 0.5):
+		area_balance = 1 - area_balance
+		
+	start_ind = int(round(area_balance * (len(partition_order) - 1) ))
+	stop_ind = (len(partition_order)-1) - start_ind
+	
+	split_inds = range(start_ind, stop_ind+1)
+	
+	cutsize_vec = np.zeros(len(split_inds))
+	for (idx, split_ind) in enumerate(split_inds):
+		# top right or bot left quadrant represent interconnections across tiers
+		# if split_idn is index of first element in second partition
+		#	then top right quadrant is rows 0:split_ind-1 (i.e. not including split_ind)
+		#	and cols split_ind:end (including split_ind and end)
+		cutsize_vec[idx] = adj_reord[0:split_ind, split_ind:].sum()
+
+	mincut_ind = split_inds[np.argmin(cutsize_vec)]
+	mincut_val = np.min(cutsize_vec)
+	
+	num_elements = np.shape(adjacency_mat)[0]
+	split_ind_arr = np.array(split_inds)
+	normcut_vec = cutsize_vec/(split_ind_arr*(num_elements-split_ind_arr))
+	norm_mincut_ind = split_inds[np.argmin(normcut_vec)]
+	norm_mincut_val = np.min(normcut_vec)
+	
+	p1_size_frac_vec = np.array(split_inds)/len(partition_order)
+
+	return (mincut_val, mincut_ind, cutsize_vec, norm_mincut_val, norm_mincut_ind, normcut_vec, p1_size_frac_vec)
+
+	
+def partition_1d_perturbed(Q, Qp, eigenval_cutoff=1e-5, num_eigs_solve=10, num_eigs_corr=5):
+	#(vals, vecs) = la.eigh(Q) # Q is guaranteed to be hermitian since it is a real symmetric matrix
+	
+	(vals, vecs) = spsl.eigsh(Q, k=num_eigs_solve, which="LM", sigma=-1)	
+	sorted_vals = np.argsort(vals)
+	
+	# Sparse eigenvalue solver sometimes gives us spurious small eigs. We need to sift them out before we do any processing
+	sorted_vals_raw = np.argsort(vals)
+	sorted_vals = []
+	sorted_vals.append( np.min(np.abs(vals)) ) # First eigenvalue of the laplacian matrix will always be 0. spe
+	for el in sorted_vals_raw:
+		if (vals[el] > eigenval_cutoff):
+			sorted_vals.append(vals[el])
+
+	if ( len(sorted_vals) == 1):
+		print("partition_1d: Error! Not enough valid eigenvalues. Rerun with num_eigs > 10")
 
 
 	#vals = np.matrix(vals)
@@ -157,7 +224,7 @@ def partition_1d_perturbed(Q,Qp,n):
 	val2 = vals[sorted_vals[1]]
 	vec2 = vecs[:,sorted_vals[1]]
 
-	vecs_to_include = [0] + list(range(2,n))
+	vecs_to_include = [0] + list(range(2,num_eigs_corr))
 
 	vec_approx = np.zeros((np.size(vec2),1))
 	Qp = np.array(Qp)
@@ -165,7 +232,14 @@ def partition_1d_perturbed(Q,Qp,n):
 	for i in vecs_to_include:
 		vv = np.zeros( (np.size(vec2),1) )
 		vv[:,0] = vecs[:,sorted_vals[i]]
+		
+		# [FIX] Issue with calculation of top. Qp has no shape, could be the problem
+		print( np.shape(vv) )
+		print( np.shape(Qp) )
+		print( np.shape(vec2) )
+		print( Qp )
 
+		#print((vv.T).dot( Qp.dot(vec2) ))
 		top = float( (vv.T).dot( Qp.dot(vec2) ) )
 		bot = val2 - vals[sorted_vals[i]]
 		vec_approx = vec_approx + (top/bot)*vv
