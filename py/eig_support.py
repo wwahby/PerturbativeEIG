@@ -1,9 +1,10 @@
 import numpy as np	# array handling
-import scipy.linalg as la	# eigenvalues
+#import scipy.linalg as la	# eigenvalues
 import scipy.sparse as sps # Sparse matrices
 import scipy.sparse.linalg as spsl
-import numpy.ma as ma
+#import numpy.ma as ma
 import math
+import pylab as pl
 
 
 class map_1to1:
@@ -144,7 +145,7 @@ def parse_hgr_sparse(infile_name, delim=" ", index_offset=0):
 
 def partition_1d(Q, eigenval_cutoff=1e-5, num_eigs = 10):
 	# Finding more eigs than we need because sparse eigsh sometimes gives spurious eigs
-	(vals, vecs) = spsl.eigsh(Q, k=num_eigs, which='LM', sigma=-1) # Q is guaranteed to be hermitian since it is a real symmetric matrix
+	(vals, vecs) = spsl.eigsh(Q, k=num_eigs, which='SM') # Q is guaranteed to be hermitian since it is a real symmetric matrix
 
 	# Sparse eigenvalue solver sometimes gives us spurious small eigs. We need to sift them out before we do any processing
 	sorted_vals_raw = np.argsort(vals)
@@ -220,26 +221,21 @@ def partition_1d_perturbed(Q, Qp, eigenval_cutoff=1e-5, num_eigs_solve=10, num_e
 
 	#vals = np.matrix(vals)
 	#vecs = np.matrix(vecs)
-	
+	mat_size = np.shape(Qp)
+	vec_length = mat_size[0] # should be symmetric
 	val2 = vals[sorted_vals[1]]
-	vec2 = vecs[:,sorted_vals[1]]
+	vec2 = np.zeros((vec_length,1))
+	vec2[:,0] = vecs[:,sorted_vals[1]]
 
 	vecs_to_include = [0] + list(range(2,num_eigs_corr))
 
 	vec_approx = np.zeros((np.size(vec2),1))
-	Qp = np.array(Qp)
+	#Qp = np.array(Qp)
 	
 	for i in vecs_to_include:
 		vv = np.zeros( (np.size(vec2),1) )
 		vv[:,0] = vecs[:,sorted_vals[i]]
 		
-		# [FIX] Issue with calculation of top. Qp has no shape, could be the problem
-		print( np.shape(vv) )
-		print( np.shape(Qp) )
-		print( np.shape(vec2) )
-		print( Qp )
-
-		#print((vv.T).dot( Qp.dot(vec2) ))
 		top = float( (vv.T).dot( Qp.dot(vec2) ) )
 		bot = val2 - vals[sorted_vals[i]]
 		vec_approx = vec_approx + (top/bot)*vv
@@ -349,4 +345,66 @@ def is_symmetric(m):
     check = np.allclose(vl, vu)
 
     return check
+				
+				
+def test():
+	hgr = "ibm01.hgr"
+	perturbed = "ibm01_add05.hgr"
+	num_eigs = 20
+	delim =  " "
+	num_partitions = 2
+	eigenval_cutoff = 1e-5
+	index_offset = 1
+	unbalance_factor = 45
+
+	infile_name = hgr # Reconstruct filenames with spaces
+	infile_p_name = perturbed # Reconstruct filenames with spaces
+	run_perturbed = True
+
+	area_balance = 0.5 - unbalance_factor/100
+	
+	(Q, D, A) = parse_hgr_sparse(infile_name,delim=delim, index_offset=index_offset)
+	(partition_order, eigvals, raw_eigvals) = partition_1d(Q, eigenval_cutoff = eigenval_cutoff, num_eigs = num_eigs)
+	print(eigvals)
+	print(raw_eigvals)
+	
+	print("Finding cutsize of system...")
+	(mincut_val, mincut_ind, cutsize_vec, normcut_ind, normcut_val, normcut_vec, p1_size_frac_vec) = calc_cutsize_bipart(A, partition_order, area_balance)
+
+	
+
+	if (run_perturbed):
+		
+		(Qp_exact, Dp_e, Ap_e) = parse_hgr_sparse(infile_p_name, delim=delim, index_offset=index_offset)
+		Qp = Qp_exact - Q
+
+		p1dp = partition_1d_perturbed(Q, Qp, eigenval_cutoff = eigenval_cutoff, num_eigs_solve = num_eigs)
+		(p1dpe, vals_sorted_pe, vals_raw_pe)  = partition_1d(Qp_exact, eigenval_cutoff = eigenval_cutoff, num_eigs = num_eigs)
+		
+		print("Finding cutsize of perturbed system...")
+		(mincut_val_p, mincut_ind_p, cutsize_vec_p, normcut_ind_p, normcut_val_p, normcut_vec_p, p1_size_frac_vec_p) = calc_cutsize_bipart(Ap_e, p1dp, area_balance) # uses exact adjacency matrix, since that part can be known just based on connectivity, without actually solving eig problem
+		
+		print("Finding cutsize of exact solution to perturbed system...")
+		(mincut_val_pe, mincut_ind_pe, cutsize_vec_pe, normcut_ind_pe, normcut_val_pe, normcut_vec_pe, p1_size_frac_vec_pe) = calc_cutsize_bipart(Ap_e, p1dpe, area_balance)
+
+		pl.figure(1)
+		pl.hold(True)
+		pl.plot(p1_size_frac_vec, cutsize_vec, 'k')
+		pl.plot(p1_size_frac_vec_p, cutsize_vec_p, 'r')
+		pl.plot(p1_size_frac_vec_pe, cutsize_vec_pe, 'b')
+		
+		pl.figure(2)
+		#pl.hold()
+		pl.plot(p1_size_frac_vec, normcut_vec, 'k')
+		pl.plot(p1_size_frac_vec_p, normcut_vec_p, 'r')
+		pl.plot(p1_size_frac_vec_pe, normcut_vec_pe, 'b')
+		
+#		print("Exact perturbed partition\n==============\n" + str(p1dpe))
+#		print()
+#		print("Approx perturbed partition\n==============\n" + str(np.array(p1dp)))
+#		print()
+#
+#
+#		(r1,r2) = es.compare_lists(list(p1dp),list(p1dpe),0.5)
+#		print("{0:>6.4f}\t{1:6.4f}".format(r1,r2))
 	
