@@ -5,6 +5,8 @@ import scipy.sparse.linalg as spsl
 #import numpy.ma as ma
 import math
 import pylab as pl
+import time # For function timing
+import os
 
 
 class map_1to1:
@@ -22,6 +24,7 @@ class map_1to1:
 
 def parse_hgr(infile_name, delim=" ", index_offset=0):
 	# Read input file
+	time_start = time.clock()
 	infile = open(infile_name,'r')
 	lines = infile.readlines()
 	infile.close()
@@ -41,7 +44,7 @@ def parse_hgr(infile_name, delim=" ", index_offset=0):
 	## Process the HGR file
 	for net in range(1,len(lines)):	# iterate over all nets (ignore first, as that just gives us number of cells and nets)
 		line_arr = lines[net].split(delim)	# Break up
-		
+
 		if(len(line_arr) > 1):
 			net_cells = len(line_arr)
 			net_weight = 1/(net_cells-1)
@@ -55,10 +58,13 @@ def parse_hgr(infile_name, delim=" ", index_offset=0):
 					j_cell = int(line_arr[j])-index_offset
 					Q[i_cell,j_cell] = Q[i_cell,j_cell] - net_weight
 					Q[j_cell,i_cell] = Q[j_cell,i_cell] - net_weight
+	time_stop = time.clock()
+	time_elapsed = time_stop - time_start
 
-	return Q
+	return (Q, time_elapsed)
 
 def parse_hgr_sparse(infile_name, delim=" ", index_offset=0):
+	time_start = time.clock()
 	# Read input file
 	infile = open(infile_name,'r')
 	lines = infile.readlines()
@@ -92,7 +98,7 @@ def parse_hgr_sparse(infile_name, delim=" ", index_offset=0):
 
 	for net in range(1,len(lines)):	# iterate over all nets (ignore first, as that just gives us number of cells and nets)
 		line_arr = lines[net].split(delim)	# Break up
-		
+
 		if(len(line_arr) > 1): # Only count nets that have more than one node
 			net_cells = len(line_arr)
 			net_weight = 1/(net_cells-1)
@@ -116,7 +122,7 @@ def parse_hgr_sparse(infile_name, delim=" ", index_offset=0):
 					qi.append(i_cell)
 					qj.append(j_cell)
 					qs.append(-net_weight)
-					
+
 					a_i.append(i_cell)
 					a_j.append(j_cell)
 					a_s.append(net_weight)
@@ -125,7 +131,7 @@ def parse_hgr_sparse(infile_name, delim=" ", index_offset=0):
 					qi.append(j_cell)
 					qj.append(i_cell)
 					qs.append(-net_weight)
-					
+
 					a_i.append(j_cell)
 					a_j.append(i_cell)
 					a_s.append(net_weight)
@@ -139,11 +145,16 @@ def parse_hgr_sparse(infile_name, delim=" ", index_offset=0):
 	A = A.tocsc()
 	Q = D - A
 
-	return (Q, D, A)
+	time_stop = time.clock()
+
+	time_elapsed = time_stop - time_start;
+
+	return (Q, D, A, time_elapsed)
 
 
 
 def partition_1d(Q, eigenval_cutoff=1e-5, num_eigs = 10):
+	time_start = time.clock()
 	# Finding more eigs than we need because sparse eigsh sometimes gives spurious eigs
 	(vals, vecs) = spsl.eigsh(Q, k=num_eigs, which='SM') # Q is guaranteed to be hermitian since it is a real symmetric matrix
 
@@ -157,15 +168,20 @@ def partition_1d(Q, eigenval_cutoff=1e-5, num_eigs = 10):
 
 	if ( len(sorted_vals) == 1):
 		print("partition_1d: Error! Not enough valid eigenvalues. Rerun with num_eigs > 10")
-	
+
 	val2 = vals[sorted_vals[1]]
 	vec2 = vecs[:,sorted_vals[1]]
 
 	partition1d = np.argsort(vec2)
-	return (partition1d, sorted_vals, vals)
+
+	time_stop = time.clock()
+	time_elapsed = time_stop - time_start
+	return (partition1d, sorted_vals, vals, time_elapsed)
 
 
 def calc_cutsize_bipart(adjacency_mat, partition_order, area_balance):
+	time_start = time.clock()
+
 	# Reorder the matrix in partition order
 	adj_reord = adjacency_mat[:, partition_order]
 	adj_reord = adj_reord[partition_order,:]
@@ -173,12 +189,12 @@ def calc_cutsize_bipart(adjacency_mat, partition_order, area_balance):
 	# [FIX] Need to properly work out indexing for array slice
 	if (area_balance > 0.5):
 		area_balance = 1 - area_balance
-		
+
 	start_ind = int(round(area_balance * (len(partition_order) - 1) ))
 	stop_ind = (len(partition_order)-1) - start_ind
-	
+
 	split_inds = range(start_ind, stop_ind+1)
-	
+
 	cutsize_vec = np.zeros(len(split_inds))
 	for (idx, split_ind) in enumerate(split_inds):
 		# top right or bot left quadrant represent interconnections across tiers
@@ -189,24 +205,27 @@ def calc_cutsize_bipart(adjacency_mat, partition_order, area_balance):
 
 	mincut_ind = split_inds[np.argmin(cutsize_vec)]
 	mincut_val = np.min(cutsize_vec)
-	
+
 	num_elements = np.shape(adjacency_mat)[0]
 	split_ind_arr = np.array(split_inds)
 	normcut_vec = cutsize_vec/(split_ind_arr*(num_elements-split_ind_arr))
 	norm_mincut_ind = split_inds[np.argmin(normcut_vec)]
 	norm_mincut_val = np.min(normcut_vec)
-	
+
 	p1_size_frac_vec = np.array(split_inds)/len(partition_order)
+	time_stop = time.clock()
 
-	return (mincut_val, mincut_ind, cutsize_vec, norm_mincut_val, norm_mincut_ind, normcut_vec, p1_size_frac_vec)
+	time_elapsed = time_stop - time_start
+	return (mincut_val, mincut_ind, cutsize_vec, norm_mincut_val, norm_mincut_ind, normcut_vec, p1_size_frac_vec, time_elapsed)
 
-	
+
 def partition_1d_perturbed(Q, Qp, eigenval_cutoff=1e-5, num_eigs_solve=10, num_eigs_corr=5):
 	#(vals, vecs) = la.eigh(Q) # Q is guaranteed to be hermitian since it is a real symmetric matrix
-	
-	(vals, vecs) = spsl.eigsh(Q, k=num_eigs_solve, which="LM", sigma=-1)	
+	time_start = time.clock()
+
+	(vals, vecs) = spsl.eigsh(Q, k=num_eigs_solve, which="LM", sigma=-1)
 	sorted_vals = np.argsort(vals)
-	
+
 	# Sparse eigenvalue solver sometimes gives us spurious small eigs. We need to sift them out before we do any processing
 	sorted_vals_raw = np.argsort(vals)
 	sorted_vals = []
@@ -214,6 +233,8 @@ def partition_1d_perturbed(Q, Qp, eigenval_cutoff=1e-5, num_eigs_solve=10, num_e
 	for el in sorted_vals_raw:
 		if (vals[el] > eigenval_cutoff):
 			sorted_vals.append(vals[el])
+
+	time_eig_standard = time.clock()
 
 	if ( len(sorted_vals) == 1):
 		print("partition_1d: Error! Not enough valid eigenvalues. Rerun with num_eigs > 10")
@@ -231,11 +252,11 @@ def partition_1d_perturbed(Q, Qp, eigenval_cutoff=1e-5, num_eigs_solve=10, num_e
 
 	vec_approx = np.zeros((np.size(vec2),1))
 	#Qp = np.array(Qp)
-	
+
 	for i in vecs_to_include:
 		vv = np.zeros( (np.size(vec2),1) )
 		vv[:,0] = vecs[:,sorted_vals[i]]
-		
+
 		top = float( (vv.T).dot( Qp.dot(vec2) ) )
 		bot = val2 - vals[sorted_vals[i]]
 		vec_approx = vec_approx + (top/bot)*vv
@@ -243,8 +264,12 @@ def partition_1d_perturbed(Q, Qp, eigenval_cutoff=1e-5, num_eigs_solve=10, num_e
 	partition1d = np.argsort((vec_approx.T))
 	partition1d = list(partition1d[0]) # Converting this back to a list. the array access is because the NP ndarray is 10x1 and
 									   # we just want a normal "dimensionless" 10 element list
-	
-	return partition1d
+	time_stop = time.clock()
+	#time_elapsed_tot = time_stop - time_start
+	time_elapsed_eig_standard = time_eig_standard - time_start
+	time_elapsed_partition_perturbed = time_stop - time_eig_standard
+
+	return (partition1d, time_elapsed_partition_perturbed, time_elapsed_eig_standard)
 
 
 def construct_component_map(dict_file_name):
@@ -345,12 +370,21 @@ def is_symmetric(m):
     check = np.allclose(vl, vu)
 
     return check
-				
-				
+
+
 def test():
-	hgr = "ibm01.hgr"
-	perturbed = "ibm01_add05.hgr"
-	num_eigs = 20
+
+	cur_dir = os.getcwd()
+	base_dir = os.path.dirname( cur_dir )
+	netlist_dir = os.path.join(base_dir, "netlists")
+
+	hgr_filename = "industry2.hgr"
+	perturbed_filename = "industry2_add05.hgr"
+
+	hgr = os.path.join( netlist_dir, hgr_filename )
+	perturbed = os.path.join( netlist_dir, perturbed_filename )
+
+	num_eigs = 10
 	delim =  " "
 	num_partitions = 2
 	eigenval_cutoff = 1e-5
@@ -362,49 +396,46 @@ def test():
 	run_perturbed = True
 
 	area_balance = 0.5 - unbalance_factor/100
-	
-	(Q, D, A) = parse_hgr_sparse(infile_name,delim=delim, index_offset=index_offset)
-	(partition_order, eigvals, raw_eigvals) = partition_1d(Q, eigenval_cutoff = eigenval_cutoff, num_eigs = num_eigs)
-	print(eigvals)
-	print(raw_eigvals)
-	
-	print("Finding cutsize of system...")
-	(mincut_val, mincut_ind, cutsize_vec, normcut_ind, normcut_val, normcut_vec, p1_size_frac_vec) = calc_cutsize_bipart(A, partition_order, area_balance)
 
-	
+	(Q, D, A, time_parse_exact) = parse_hgr_sparse(infile_name,delim=delim, index_offset=index_offset)
+
+	(partition_order, eigvals, raw_eigvals, time_partition_exact) = partition_1d(Q, eigenval_cutoff = eigenval_cutoff, num_eigs = num_eigs)
+
+
+	print("Finding cutsize of system...")
+	(mincut_val, mincut_ind, cutsize_vec, normcut_ind, normcut_val, normcut_vec, p1_size_frac_vec, time_cutsize_exact) = calc_cutsize_bipart(A, partition_order, area_balance)
+
 
 	if (run_perturbed):
-		
-		(Qp_exact, Dp_e, Ap_e) = parse_hgr_sparse(infile_p_name, delim=delim, index_offset=index_offset)
+
+		(Qp_exact, Dp_e, Ap_e, time_parse_perturbed) = parse_hgr_sparse(infile_p_name, delim=delim, index_offset=index_offset)
 		Qp = Qp_exact - Q
 
-		p1dp = partition_1d_perturbed(Q, Qp, eigenval_cutoff = eigenval_cutoff, num_eigs_solve = num_eigs)
-		(p1dpe, vals_sorted_pe, vals_raw_pe)  = partition_1d(Qp_exact, eigenval_cutoff = eigenval_cutoff, num_eigs = num_eigs)
-		
-		print("Finding cutsize of perturbed system...")
-		(mincut_val_p, mincut_ind_p, cutsize_vec_p, normcut_ind_p, normcut_val_p, normcut_vec_p, p1_size_frac_vec_p) = calc_cutsize_bipart(Ap_e, p1dp, area_balance) # uses exact adjacency matrix, since that part can be known just based on connectivity, without actually solving eig problem
-		
-		print("Finding cutsize of exact solution to perturbed system...")
-		(mincut_val_pe, mincut_ind_pe, cutsize_vec_pe, normcut_ind_pe, normcut_val_pe, normcut_vec_pe, p1_size_frac_vec_pe) = calc_cutsize_bipart(Ap_e, p1dpe, area_balance)
+		(p1dp, time_partition_perturbed, time_eig_standard) = partition_1d_perturbed(Q, Qp, eigenval_cutoff = eigenval_cutoff, num_eigs_solve = num_eigs)
 
+		(p1dpe, vals_sorted_pe, vals_raw_pe, time_partition_perturbed_exact)  = partition_1d(Qp_exact, eigenval_cutoff = eigenval_cutoff, num_eigs = num_eigs)
+
+		print("Finding cutsize of perturbed system...")
+		(mincut_val_p, mincut_ind_p, cutsize_vec_p, normcut_ind_p, normcut_val_p, normcut_vec_p, p1_size_frac_vec_p, time_cutsize_perturbed) = calc_cutsize_bipart(Ap_e, p1dp, area_balance) # uses exact adjacency matrix, since that part can be known just based on connectivity, without actually solving eig problem
+
+		print("Finding cutsize of exact solution to perturbed system...")
+		(mincut_val_pe, mincut_ind_pe, cutsize_vec_pe, normcut_ind_pe, normcut_val_pe, normcut_vec_pe, p1_size_frac_vec_pe, time_cutsize_perturbed_exact) = calc_cutsize_bipart(Ap_e, p1dpe, area_balance)
+
+		## Figures
 		pl.figure(1)
 		pl.hold(True)
 		pl.plot(p1_size_frac_vec, cutsize_vec, 'k')
 		pl.plot(p1_size_frac_vec_p, cutsize_vec_p, 'r')
 		pl.plot(p1_size_frac_vec_pe, cutsize_vec_pe, 'b')
-		
+
 		pl.figure(2)
-		#pl.hold()
+		pl.hold(True)
 		pl.plot(p1_size_frac_vec, normcut_vec, 'k')
 		pl.plot(p1_size_frac_vec_p, normcut_vec_p, 'r')
 		pl.plot(p1_size_frac_vec_pe, normcut_vec_pe, 'b')
-		
-#		print("Exact perturbed partition\n==============\n" + str(p1dpe))
-#		print()
-#		print("Approx perturbed partition\n==============\n" + str(np.array(p1dp)))
-#		print()
-#
-#
-#		(r1,r2) = es.compare_lists(list(p1dp),list(p1dpe),0.5)
-#		print("{0:>6.4f}\t{1:6.4f}".format(r1,r2))
-	
+
+		print("{0:>16s}\t{1:<16.3g} \n {2:>16s}\t{3:<16.3g} \n {4:>16s}\t{5:<16.3g} \n ".format("t_par_exact", time_partition_exact, "t_par_per_ex", time_partition_perturbed_exact, "t_par_per", time_partition_perturbed) )
+#		print("{0:^16.3g}\t{1:^16.3g}\t{2:^16.3g}".format(time_partition_exact, time_partition_perturbed_exact, time_partition_perturbed) )
+
+
+
