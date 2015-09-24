@@ -6,47 +6,47 @@ close all
 % filename indicates original netlist
 % filename_p indicates perturbed netlist
 
-% filename = 'netlists/fract.hgr';
-% filename_p = 'netlists/fract_add05.hgr';
-% filename_p = 'netlists/fract_del05a.hgr';
-% filename = 'netlists/p1.hgr';
-% filename_p = 'netlists/p1_block.hgr';
-% filename_p = 'netlists/p1_add05.hgr';
-% filename_p = 'netlists/p1_del05a.hgr';
-% filename = 'netlists/structP.hgr';
-% filename_p = 'netlists/structP_add05.hgr';
-% filename_p = 'netlists/structP_del05a.hgr';
-% filename = 'netlists/p2.hgr';
-% filename_p = 'netlists/p2_block.hgr';
-% filename_p = 'netlists/p2_add05.hgr';
-% filename_p = 'netlists/p2_man.hgr';
-% filename_p = 'netlists/p2_del05a.hgr';
-% filename = 'netlists/biomedP.hgr';
-% filename_p = 'netlists/biomedP_block.hgr';
-% filename_p = 'netlists/biomedP_add05.hgr';
-% filename_p = 'netlists/biomedP_man.hgr';
-% filename_p = 'netlists/biomedP_del05a.hgr';
-% filename_p = 'netlists/biomedP_add005.hgr';
-% filename = 'netlists/industry2.hgr';
-% filename_p = 'netlists/industry2_block.hgr';
-% filename_p = 'netlists/industry2_add05.hgr';
-% filename_p = 'netlists/industry2_del05a.hgr';
-filename = 'netlists/ibm01.hgr';
-filename_p = 'netlists/ibm01_block.hgr';
-% filename_p = 'netlists/ibm01_add05.hgr';
-% filename_p = 'netlists/ibm01_del05a.hgr';
-% filename = 'netlists/industry3.hgr';
-% filename_p = 'netlists/industry3_block.hgr';
-% filename_p = 'netlists/industry3_add05.hgr';
-% filename_p = 'netlists/industry3_del05a.hgr';
+% filename = '../netlists/fract.hgr';
+% filename_p = '../netlists/fract_add05.hgr';
+% filename_p = '../netlists/fract_del05a.hgr';
+% filename = '../netlists/p1.hgr';
+% filename_p = '../netlists/p1_block.hgr';
+% filename_p = '../netlists/p1_add05.hgr';
+% filename_p = '../netlists/p1_del05a.hgr';
+% filename = '../netlists/structP.hgr';
+% filename_p = '../netlists/structP_add05.hgr';
+% filename_p = '../netlists/structP_del05a.hgr';
+% filename = '../netlists/p2.hgr';
+% filename_p = '../netlists/p2_block.hgr';
+% filename_p = '../netlists/p2_add05.hgr';
+% filename_p = '../netlists/p2_man.hgr';
+% filename_p = '../netlists/p2_del05a.hgr';
+% filename = '../netlists/biomedP.hgr';
+% filename_p = '../netlists/biomedP_block.hgr';
+% filename_p = '../netlists/biomedP_add05.hgr';
+% filename_p = '../netlists/biomedP_man.hgr';
+% filename_p = '../netlists/biomedP_del05a.hgr';
+% filename_p = '../netlists/biomedP_add005.hgr';
+% filename = '../netlists/industry2.hgr';
+% filename_p = '../netlists/industry2_block.hgr';
+% filename_p = '../netlists/industry2_add05.hgr';
+% filename_p = '../netlists/industry2_del05a.hgr';
+filename = '../netlists/ibm01.hgr';
+filename_p = '../netlists/ibm01_block.hgr';
+% filename_p = '../netlists/ibm01_add05.hgr';
+% filename_p = '../netlists/ibm01_del05a.hgr';
+% filename = '../netlists/industry3.hgr';
+% filename_p = '../netlists/industry3_block.hgr';
+% filename_p = '../netlists/industry3_add05.hgr';
+% filename_p = '../netlists/industry3_del05a.hgr';
 %% Warning! Here be monsters. Have more than 3GB RAM free before you try to run these
-% filename = 'netlists/ibm10.hgr';
-% filename_p = 'netlists/ibm10_add01.hgr';
-% filename_p = 'netlists/ibm10_add05.hgr';
-% filename_p = 'netlists/ibm10_del05a.hgr';
-% filename = 'netlists/ibm18.hgr';
-% filename_p = 'netlists/ibm18_add05.hgr';
-% filename_p = 'netlists/ibm18_del05a.hgr';
+% filename = '../netlists/ibm10.hgr';
+% filename_p = '../netlists/ibm10_add01.hgr';
+% filename_p = '../netlists/ibm10_add05.hgr';
+% filename_p = '../netlists/ibm10_del05a.hgr';
+% filename = '../netlists/ibm18.hgr';
+% filename_p = '../netlists/ibm18_add05.hgr';
+% filename_p = '../netlists/ibm18_del05a.hgr';
 
 
 %% Parameters

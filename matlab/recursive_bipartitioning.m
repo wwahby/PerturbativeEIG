@@ -1,6 +1,6 @@
 % Recursive bipartitioning 
 
-filename = 'netlists/structP.hgr';
+filename = '../netlists/structP.hgr';
 num_eigs = 10;
 node_areas = 1;
 area_constraint = 0.50;
