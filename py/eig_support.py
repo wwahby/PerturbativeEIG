@@ -176,7 +176,7 @@ def partition_1d(Q, eigenval_cutoff=1e-5, num_eigs = 10):
 
 	time_stop = time.clock()
 	time_elapsed = time_stop - time_start
-	return (partition1d, sorted_vals, vals, time_elapsed)
+	return (partition1d, sorted_vals, vals, vecs, time_elapsed)
 
 
 def calc_cutsize_bipart(adjacency_mat, partition_order, area_balance):
@@ -219,11 +219,11 @@ def calc_cutsize_bipart(adjacency_mat, partition_order, area_balance):
 	return (mincut_val, mincut_ind, cutsize_vec, norm_mincut_val, norm_mincut_ind, normcut_vec, p1_size_frac_vec, time_elapsed)
 
 
-def partition_1d_perturbed(Q, Qp, eigenval_cutoff=1e-5, num_eigs_solve=10, num_eigs_corr=5):
+def partition_1d_perturbed(vals, vecs, Qp, eigenval_cutoff=1e-5, num_eigs_solve=10, num_eigs_corr=5):
 	#(vals, vecs) = la.eigh(Q) # Q is guaranteed to be hermitian since it is a real symmetric matrix
 	time_start = time.clock()
 
-	(vals, vecs) = spsl.eigsh(Q, k=num_eigs_solve, which="LM", sigma=-1)
+	#(vals, vecs) = spsl.eigsh(Q, k=num_eigs_solve, which="LM", sigma=-1)
 	sorted_vals = np.argsort(vals)
 
 	# Sparse eigenvalue solver sometimes gives us spurious small eigs. We need to sift them out before we do any processing
@@ -378,13 +378,13 @@ def test():
 	base_dir = os.path.dirname( cur_dir )
 	netlist_dir = os.path.join(base_dir, "netlists")
 
-	hgr_filename = "industry2.hgr"
-	perturbed_filename = "industry2_add05.hgr"
+	hgr_filename = "ibm10.hgr"
+	perturbed_filename = "ibm10_add05.hgr"
 
 	hgr = os.path.join( netlist_dir, hgr_filename )
 	perturbed = os.path.join( netlist_dir, perturbed_filename )
 
-	num_eigs = 10
+	num_eigs = 20
 	delim =  " "
 	num_partitions = 2
 	eigenval_cutoff = 1e-5
@@ -399,7 +399,7 @@ def test():
 
 	(Q, D, A, time_parse_exact) = parse_hgr_sparse(infile_name,delim=delim, index_offset=index_offset)
 
-	(partition_order, eigvals, raw_eigvals, time_partition_exact) = partition_1d(Q, eigenval_cutoff = eigenval_cutoff, num_eigs = num_eigs)
+	(partition_order, eigvals, raw_eigvals, raw_eigvecs, time_partition_exact) = partition_1d(Q, eigenval_cutoff = eigenval_cutoff, num_eigs = num_eigs)
 
 
 	print("Finding cutsize of system...")
@@ -411,9 +411,9 @@ def test():
 		(Qp_exact, Dp_e, Ap_e, time_parse_perturbed) = parse_hgr_sparse(infile_p_name, delim=delim, index_offset=index_offset)
 		Qp = Qp_exact - Q
 
-		(p1dp, time_partition_perturbed, time_eig_standard) = partition_1d_perturbed(Q, Qp, eigenval_cutoff = eigenval_cutoff, num_eigs_solve = num_eigs)
+		(p1dp, time_partition_perturbed, time_eig_standard) = partition_1d_perturbed(raw_eigvals, raw_eigvecs, Qp, eigenval_cutoff = eigenval_cutoff, num_eigs_solve = num_eigs)
 
-		(p1dpe, vals_sorted_pe, vals_raw_pe, time_partition_perturbed_exact)  = partition_1d(Qp_exact, eigenval_cutoff = eigenval_cutoff, num_eigs = num_eigs)
+		(p1dpe, vals_sorted_pe, vals_raw_pe, vecs_raw_pe, time_partition_perturbed_exact)  = partition_1d(Qp_exact, eigenval_cutoff = eigenval_cutoff, num_eigs = num_eigs)
 
 		print("Finding cutsize of perturbed system...")
 		(mincut_val_p, mincut_ind_p, cutsize_vec_p, normcut_ind_p, normcut_val_p, normcut_vec_p, p1_size_frac_vec_p, time_cutsize_perturbed) = calc_cutsize_bipart(Ap_e, p1dp, area_balance) # uses exact adjacency matrix, since that part can be known just based on connectivity, without actually solving eig problem

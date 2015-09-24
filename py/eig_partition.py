@@ -28,7 +28,7 @@ def main():
 	area_balance = 0.5 - unbalance_factor/100
 
 	(Q, D, A, time_parse_exact) = es.parse_hgr_sparse(infile_name,delim=args.delim, index_offset=args.index_offset)
-	(partition_order, eigvals, raw_eigvals, time_partition_exact) = es.partition_1d(Q, eigenval_cutoff = args.eigenval_cutoff, num_eigs = args.num_eigs)
+	(partition_order, eigvals, raw_eigvals, raw_eigvecs, time_partition_exact) = es.partition_1d(Q, eigenval_cutoff = args.eigenval_cutoff, num_eigs = args.num_eigs)
 
 	print("Finding cutsize of system...")
 	(mincut_val, mincut_ind, cutsize_vec, normcut_ind, normcut_val, normcut_vec, p1_size_frac_vec, time_calc_cutsize_exact) = es.calc_cutsize_bipart(A, partition_order, area_balance)
@@ -40,28 +40,28 @@ def main():
 		(Qp_exact, Dp_e, Ap_e, time_parse_perturbed_exact) = es.parse_hgr_sparse(infile_p_name, delim=args.delim, index_offset=args.index_offset)
 		Qp = Qp_exact - Q
 
-		(p1dp, time_partition_perturbed, time_eig_standard) = es.partition_1d_perturbed(Q, Qp, eigenval_cutoff = args.eigenval_cutoff, num_eigs_solve = args.num_eigs)
-		(p1dpe, time_partition_perturbed_exact) = es.partition_1d(Qp_exact)
+		(p1dp, time_partition_perturbed, time_eig_standard) = es.partition_1d_perturbed(raw_eigvals, raw_eigvecs, Qp, eigenval_cutoff = args.eigenval_cutoff, num_eigs_solve = args.num_eigs)
+		(p1dpe, eigvals, raw_eigvals, raw_eigvecs, time_partition_perturbed_exact) = es.partition_1d(Q, eigenval_cutoff = args.eigenval_cutoff, num_eigs = args.num_eigs)
 
 		print("Finding cutsize of perturbed system...")
 		(mincut_val_p, mincut_ind_p, cutsize_vec_p, normcut_ind_p, normcut_val_p, normcut_vec_p, p1_size_frac_vec_p, time_calc_cutsize_perturbed) = es.calc_cutsize_bipart(Ap_e, p1dp, area_balance) # uses exact adjacency matrix, since that part can be known just based on connectivity, without actually solving eig problem
 		print("Finding cutsize of exact solution to perturbed system...")
 		(mincut_val_pe, mincut_ind_pe, cutsize_vec_pe, normcut_ind_pe, normcut_val_pe, normcut_vec_pe, p1_size_frac_vec_pe, time_calc_cutsize_perturbed_exact) = es.calc_cutsize_bipart(Ap_e, p1dpe, area_balance)
 
-		pl.fig(1)
+		pl.figure(1)
 		pl.hold(True)
-		pl.plot(p1_size_frac_vec, cutsize_vec, 'color', 'k')
-		pl.plot(p1_size_frac_vec_p, cutsize_vec_p, 'color', 'r')
-		pl.plot(p1_size_frac_vec_pe, cutsize_vec_pe, 'color', 'b')
+		pl.plot(p1_size_frac_vec, cutsize_vec, 'k')
+		pl.plot(p1_size_frac_vec_p, cutsize_vec_p, 'r')
+		pl.plot(p1_size_frac_vec_pe, cutsize_vec_pe, 'b')
 
-		pl.fig(2)
+		pl.figure(2)
 		pl.hold(True)
-		pl.plot(p1_size_frac_vec, normcut_vec, 'color', 'k')
-		pl.plot(p1_size_frac_vec_p, normcut_vec_p, 'color', 'r')
-		pl.plot(p1_size_frac_vec_pe, normcut_vec_pe, 'color', 'b')
+		pl.plot(p1_size_frac_vec, normcut_vec, 'k')
+		pl.plot(p1_size_frac_vec_p, normcut_vec_p, 'r')
+		pl.plot(p1_size_frac_vec_pe, normcut_vec_pe, 'b')
 
-		print("{0:^16s}\t{1:^16s}\t{2:^16s}".format("t_par_exact", "t_par_per_ex", "t_par_per") )
-		print("{0:^16.3g}\t{1:^16.3g}\t{2:^16.3g}".format(time_partition_exact, time_partition_perturbed_exact, time_partition_perturbed) )
+		print("{0:>16s}\t{1:<16.3g} \n {2:>16s}\t{3:<16.3g} \n {4:>16s}\t{5:<16.3g} \n ".format("t_par_exact", time_partition_exact, "t_par_per_ex", time_partition_perturbed_exact, "t_par_per", time_partition_perturbed) )
+#		print("{0:^16.3g}\t{1:^16.3g}\t{2:^16.3g}".format(time_partition_exact, time_partition_perturbed_exact, time_partition_perturbed) )
 
 
 if ( __name__ == "__main__"):
