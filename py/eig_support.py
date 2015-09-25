@@ -169,8 +169,9 @@ def partition_1d(Q, eigenval_cutoff=1e-5, num_eigs = 10):
 	if ( len(sorted_vals) == 1):
 		print("partition_1d: Error! Not enough valid eigenvalues. Rerun with num_eigs > 10")
 
-	val2 = vals[sorted_vals[1]]
-	vec2 = vecs[:,sorted_vals[1]]
+	eig2_ind = int(sorted_vals[1]) # index of second eigenvalue/eigenvector
+	val2 = vals[ eig2_ind ]
+	vec2 = vecs[:,eig2_ind ]
 
 	partition1d = np.argsort(vec2)
 
@@ -216,7 +217,32 @@ def calc_cutsize_bipart(adjacency_mat, partition_order, area_balance):
 	time_stop = time.clock()
 
 	time_elapsed = time_stop - time_start
-	return (mincut_val, mincut_ind, cutsize_vec, norm_mincut_val, norm_mincut_ind, normcut_vec, p1_size_frac_vec, time_elapsed)
+	(skew_size_vec, skew_cut_vec) = convert_cutsize_to_skew( p1_size_frac_vec, cutsize_vec)
+	(skew_size_vec, skew_normcut_vec) = convert_cutsize_to_skew( p1_size_frac_vec, normcut_vec)
+
+	return (mincut_val, mincut_ind, cutsize_vec, norm_mincut_val, norm_mincut_ind, normcut_vec, p1_size_frac_vec, skew_size_vec, skew_cut_vec, skew_normcut_vec, time_elapsed)
+
+
+def convert_cutsize_to_skew( size_frac_vec, cut_info_vec):
+	# Make sure we have the right number of elements in the skew vector
+	if (len(size_frac_vec) % 2 == 0):
+		skew_length = len(size_frac_vec)/2
+		mid_ind = int(skew_length)
+		skew_cut_vec = np.minimum( cut_info_vec[0:mid_ind] , cut_info_vec[-1:mid_ind-1:-1] )
+		skew_size_vec = size_frac_vec[0:mid_ind]
+	else:
+		skew_length = (len(size_frac_vec)-1)/2 + 1
+		mid_ind = int(skew_length)-1
+		skew_cut_vec = np.minimum( cut_info_vec[0:mid_ind] , cut_info_vec[-1:mid_ind:-1] )
+		skew_cut_vec = np.append( skew_cut_vec, cut_info_vec[mid_ind] )
+		skew_size_vec = size_frac_vec[0:mid_ind+1]
+
+	# Reorient the vectors
+	skew_size_vec = 0.5 - skew_size_vec
+	skew_size_vec = np.flipud(skew_size_vec)
+	skew_cut_vec = np.flipud(skew_cut_vec)
+
+	return ( skew_size_vec, skew_cut_vec)
 
 
 def partition_1d_perturbed(vals, vecs, Qp, eigenval_cutoff=1e-5, num_eigs_solve=10, num_eigs_corr=5):
@@ -244,9 +270,10 @@ def partition_1d_perturbed(vals, vecs, Qp, eigenval_cutoff=1e-5, num_eigs_solve=
 	#vecs = np.matrix(vecs)
 	mat_size = np.shape(Qp)
 	vec_length = mat_size[0] # should be symmetric
-	val2 = vals[sorted_vals[1]]
+	eig2_ind = int(sorted_vals[1]) # index of second eigenvector/eigenvalue
+	val2 = vals[eig2_ind]
 	vec2 = np.zeros((vec_length,1))
-	vec2[:,0] = vecs[:,sorted_vals[1]]
+	vec2[:,0] = vecs[:,eig2_ind]
 
 	vecs_to_include = [0] + list(range(2,num_eigs_corr))
 
@@ -255,10 +282,11 @@ def partition_1d_perturbed(vals, vecs, Qp, eigenval_cutoff=1e-5, num_eigs_solve=
 
 	for i in vecs_to_include:
 		vv = np.zeros( (np.size(vec2),1) )
-		vv[:,0] = vecs[:,sorted_vals[i]]
+		eigi_ind = int(sorted_vals[i]) # index of i-th eigenvector/eigenvalue
+		vv[:,0] = vecs[:, eigi_ind ]
 
 		top = float( (vv.T).dot( Qp.dot(vec2) ) )
-		bot = val2 - vals[sorted_vals[i]]
+		bot = val2 - vals[ eigi_ind ]
 		vec_approx = vec_approx + (top/bot)*vv
 
 	partition1d = np.argsort((vec_approx.T))
@@ -378,8 +406,8 @@ def test():
 	base_dir = os.path.dirname( cur_dir )
 	netlist_dir = os.path.join(base_dir, "netlists")
 
-	hgr_filename = "ibm10.hgr"
-	perturbed_filename = "ibm10_add05.hgr"
+	hgr_filename = "p2.hgr"
+	perturbed_filename = "p2.hgr"
 
 	hgr = os.path.join( netlist_dir, hgr_filename )
 	perturbed = os.path.join( netlist_dir, perturbed_filename )
@@ -403,7 +431,7 @@ def test():
 
 
 	print("Finding cutsize of system...")
-	(mincut_val, mincut_ind, cutsize_vec, normcut_ind, normcut_val, normcut_vec, p1_size_frac_vec, time_cutsize_exact) = calc_cutsize_bipart(A, partition_order, area_balance)
+	(mincut_val, mincut_ind, cutsize_vec, normcut_ind, normcut_val, normcut_vec, p1_size_frac_vec, skew_size_vec, skew_cut_vec, skew_normcut_vec, time_cutsize_exact) = calc_cutsize_bipart(A, partition_order, area_balance)
 
 
 	if (run_perturbed):
@@ -416,10 +444,10 @@ def test():
 		(p1dpe, vals_sorted_pe, vals_raw_pe, vecs_raw_pe, time_partition_perturbed_exact)  = partition_1d(Qp_exact, eigenval_cutoff = eigenval_cutoff, num_eigs = num_eigs)
 
 		print("Finding cutsize of perturbed system...")
-		(mincut_val_p, mincut_ind_p, cutsize_vec_p, normcut_ind_p, normcut_val_p, normcut_vec_p, p1_size_frac_vec_p, time_cutsize_perturbed) = calc_cutsize_bipart(Ap_e, p1dp, area_balance) # uses exact adjacency matrix, since that part can be known just based on connectivity, without actually solving eig problem
+		(mincut_val_p, mincut_ind_p, cutsize_vec_p, normcut_ind_p, normcut_val_p, normcut_vec_p, p1_size_frac_vec_p, skew_size_vec_p, skew_cut_vec_p, skew_normcut_vec_p, time_cutsize_perturbed) = calc_cutsize_bipart(Ap_e, p1dp, area_balance) # uses exact adjacency matrix, since that part can be known just based on connectivity, without actually solving eig problem
 
 		print("Finding cutsize of exact solution to perturbed system...")
-		(mincut_val_pe, mincut_ind_pe, cutsize_vec_pe, normcut_ind_pe, normcut_val_pe, normcut_vec_pe, p1_size_frac_vec_pe, time_cutsize_perturbed_exact) = calc_cutsize_bipart(Ap_e, p1dpe, area_balance)
+		(mincut_val_pe, mincut_ind_pe, cutsize_vec_pe, normcut_ind_pe, normcut_val_pe, normcut_vec_pe, p1_size_frac_vec_pe, skew_size_vec_pe, skew_cut_vec_pe, skew_normcut_vec_pe, time_cutsize_perturbed_exact) = calc_cutsize_bipart(Ap_e, p1dpe, area_balance)
 
 		## Figures
 		pl.figure(1)
@@ -434,6 +462,17 @@ def test():
 		pl.plot(p1_size_frac_vec_p, normcut_vec_p, 'r')
 		pl.plot(p1_size_frac_vec_pe, normcut_vec_pe, 'b')
 
+		pl.figure(3)
+		pl.hold(True)
+		pl.plot(skew_size_vec, skew_cut_vec, 'k')
+		pl.plot(skew_size_vec_p, skew_cut_vec_p, 'r')
+		pl.plot(skew_size_vec_pe, skew_cut_vec_pe, 'b')
+
+		pl.figure(4)
+		pl.hold(True)
+		pl.plot(skew_size_vec, skew_normcut_vec, 'k')
+		pl.plot(skew_size_vec_p, skew_normcut_vec_p, 'r')
+		pl.plot(skew_size_vec_pe, skew_normcut_vec_pe, 'b')
 		print("{0:>16s}\t{1:<16.3g} \n {2:>16s}\t{3:<16.3g} \n {4:>16s}\t{5:<16.3g} \n ".format("t_par_exact", time_partition_exact, "t_par_per_ex", time_partition_perturbed_exact, "t_par_per", time_partition_perturbed) )
 #		print("{0:^16.3g}\t{1:^16.3g}\t{2:^16.3g}".format(time_partition_exact, time_partition_perturbed_exact, time_partition_perturbed) )
 

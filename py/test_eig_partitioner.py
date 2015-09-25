@@ -1,12 +1,13 @@
 import os
 import eig_support as es
+import pylab as pl
 
 cur_dir = os.getcwd()
 base_dir = os.path.dirname( cur_dir )
 netlist_dir = os.path.join(base_dir, "netlists")
 
-hgr_filename = "industry3.hgr"
-perturbed_filename = "industry3_add05.hgr"
+hgr_filename = "p2.hgr"
+perturbed_filename = "p2.hgr"
 
 hgr = os.path.join( netlist_dir, hgr_filename )
 perturbed = os.path.join( netlist_dir, perturbed_filename )
@@ -30,7 +31,7 @@ area_balance = 0.5 - unbalance_factor/100
 
 
 print("Finding cutsize of system...")
-(mincut_val, mincut_ind, cutsize_vec, normcut_ind, normcut_val, normcut_vec, p1_size_frac_vec, time_cutsize_exact) = es.calc_cutsize_bipart(A, partition_order, area_balance)
+(mincut_val, mincut_ind, cutsize_vec, normcut_ind, normcut_val, normcut_vec, p1_size_frac_vec, skew_size_vec, skew_cut_vec, skew_normcut_vec, time_cutsize_exact) = es.calc_cutsize_bipart(A, partition_order, area_balance)
 
 
 if (run_perturbed):
@@ -43,23 +44,37 @@ if (run_perturbed):
 	(p1dpe, vals_sorted_pe, vals_raw_pe, vecs_raw_pe, time_partition_perturbed_exact)  = es.partition_1d(Qp_exact, eigenval_cutoff = eigenval_cutoff, num_eigs = num_eigs)
 
 	print("Finding cutsize of perturbed system...")
-	(mincut_val_p, mincut_ind_p, cutsize_vec_p, normcut_ind_p, normcut_val_p, normcut_vec_p, p1_size_frac_vec_p, time_cutsize_perturbed) = es.calc_cutsize_bipart(Ap_e, p1dp, area_balance) # uses exact adjacency matrix, since that part can be known just based on connectivity, without actually solving eig problem
+	(mincut_val_p, mincut_ind_p, cutsize_vec_p, normcut_ind_p, normcut_val_p, normcut_vec_p, p1_size_frac_vec_p, skew_size_vec_p, skew_cut_vec_p, skew_normcut_vec_p, time_cutsize_perturbed) = es.calc_cutsize_bipart(Ap_e, p1dp, area_balance) # uses exact adjacency matrix, since that part can be known just based on connectivity, without actually solving eig problem
 
 	print("Finding cutsize of exact solution to perturbed system...")
-	(mincut_val_pe, mincut_ind_pe, cutsize_vec_pe, normcut_ind_pe, normcut_val_pe, normcut_vec_pe, p1_size_frac_vec_pe, time_cutsize_perturbed_exact) = es.calc_cutsize_bipart(Ap_e, p1dpe, area_balance)
+	(mincut_val_pe, mincut_ind_pe, cutsize_vec_pe, normcut_ind_pe, normcut_val_pe, normcut_vec_pe, p1_size_frac_vec_pe, skew_size_vec_p, skew_cut_vec_p, skew_normcut_vec_p, time_cutsize_perturbed_exact) = es.calc_cutsize_bipart(Ap_e, p1dpe, area_balance)
 
 	## Figures
 	pl.figure(1)
+	pl.clf()
 	pl.hold(True)
 	pl.plot(p1_size_frac_vec, cutsize_vec, 'k')
 	pl.plot(p1_size_frac_vec_p, cutsize_vec_p, 'r')
 	pl.plot(p1_size_frac_vec_pe, cutsize_vec_pe, 'b')
 
 	pl.figure(2)
+	pl.clf()
 	pl.hold(True)
 	pl.plot(p1_size_frac_vec, normcut_vec, 'k')
 	pl.plot(p1_size_frac_vec_p, normcut_vec_p, 'r')
 	pl.plot(p1_size_frac_vec_pe, normcut_vec_pe, 'b')
+
+	pl.figure(3)
+	pl.hold(True)
+	pl.plot(skew_size_vec, skew_cut_vec, 'k')
+	pl.plot(skew_size_vec_p, skew_cut_vec_p, 'r')
+	pl.plot(skew_size_vec_pe, skew_cut_vec_pe, 'b')
+
+	pl.figure(4)
+	pl.hold(True)
+	pl.plot(skew_size_vec, skew_normcut_vec, 'k')
+	pl.plot(skew_size_vec_p, skew_normcut_vec_p, 'r')
+	pl.plot(skew_size_vec_pe, skew_normcut_vec_pe, 'b')
 
 	print("{0:>16s}\t{1:<16.3g} \n {2:>16s}\t{3:<16.3g} \n {4:>16s}\t{5:<16.3g} \n ".format("t_par_exact", time_partition_exact, "t_par_per_ex", time_partition_perturbed_exact, "t_par_per", time_partition_perturbed) )
 #		print("{0:^16.3g}\t{1:^16.3g}\t{2:^16.3g}".format(time_partition_exact, time_partition_perturbed_exact, time_partition_perturbed) )
