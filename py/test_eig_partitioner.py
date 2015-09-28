@@ -12,12 +12,12 @@ perturbed_filename = "p2.hgr"
 hgr = os.path.join( netlist_dir, hgr_filename )
 perturbed = os.path.join( netlist_dir, perturbed_filename )
 
-num_eigs = 20
+num_eigs = 10
 delim =  " "
 num_partitions = 2
-eigenval_cutoff = 1e-3
+eigenval_cutoff = 1e-5
 index_offset = 1
-unbalance_factor = 45
+unbalance_factor = 50
 
 infile_name = hgr # Reconstruct filenames with spaces
 infile_p_name = perturbed # Reconstruct filenames with spaces
@@ -47,7 +47,7 @@ if (run_perturbed):
 	(mincut_val_p, mincut_ind_p, cutsize_vec_p, normcut_ind_p, normcut_val_p, normcut_vec_p, p1_size_frac_vec_p, skew_size_vec_p, skew_cut_vec_p, skew_normcut_vec_p, time_cutsize_perturbed) = es.calc_cutsize_bipart(Ap_e, p1dp, area_balance) # uses exact adjacency matrix, since that part can be known just based on connectivity, without actually solving eig problem
 
 	print("Finding cutsize of exact solution to perturbed system...")
-	(mincut_val_pe, mincut_ind_pe, cutsize_vec_pe, normcut_ind_pe, normcut_val_pe, normcut_vec_pe, p1_size_frac_vec_pe, skew_size_vec_p, skew_cut_vec_p, skew_normcut_vec_p, time_cutsize_perturbed_exact) = es.calc_cutsize_bipart(Ap_e, p1dpe, area_balance)
+	(mincut_val_pe, mincut_ind_pe, cutsize_vec_pe, normcut_ind_pe, normcut_val_pe, normcut_vec_pe, p1_size_frac_vec_pe, skew_size_vec_pe, skew_cut_vec_pe, skew_normcut_vec_pe, time_cutsize_perturbed_exact) = es.calc_cutsize_bipart(Ap_e, p1dpe, area_balance)
 
 	## Figures
 	pl.figure(1)

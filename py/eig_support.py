@@ -152,47 +152,54 @@ def parse_hgr_sparse(infile_name, delim=" ", index_offset=0):
 	return (Q, D, A, time_elapsed)
 
 
-
-def partition_1d(Q, eigenval_cutoff=1e-5, num_eigs = 10):
-	time_start = time.clock()
-	# Finding more eigs than we need because sparse eigsh sometimes gives spurious eigs
-	(vals, vecs) = spsl.eigsh(Q, k=num_eigs, which='SM') # Q is guaranteed to be hermitian since it is a real symmetric matrix
-
+def get_sorted_eigvals(vals, vecs, eigenval_cutoff):
 	# Sparse eigenvalue solver sometimes gives us spurious small eigs. We need to sift them out before we do any processing
+
 	sorted_vals_raw = np.argsort(vals)
 	sorted_vals = []
 	sorted_vals.append( np.min(np.abs(vals)) ) # First eigenvalue of the laplacian matrix will always be 0. spe
 	for el in sorted_vals_raw:
-		if (vals[el] > eigenval_cutoff):
-			sorted_vals.append(vals[el])
+		if (vals[el] > eigenval_cutoff) and ( np.isreal(vals[el]) ):
+			real_part = np.real(vals[el])
+			sorted_vals.append( real_part  ) # stripping off complex part (which should be zero as per conditional above)
 
 	if ( len(sorted_vals) == 1):
-		print("partition_1d: Error! Not enough valid eigenvalues. Rerun with num_eigs > 10")
-
+		print("place_1d: Error! Not enough valid eigenvalues. Rerun with num_eigs > 10")
 	eig2_ind = int(sorted_vals[1]) # index of second eigenvalue/eigenvector
 	val2 = vals[ eig2_ind ]
 	vec2 = vecs[:,eig2_ind ]
 
-	partition1d = np.argsort(vec2)
+	return (sorted_vals, eig2_ind, val2, vec2)
+
+
+
+def place_1d(Q, eigenval_cutoff=1e-25, num_eigs = 10):
+	time_start = time.clock()
+	# Finding more eigs than we need because sparse eigsh sometimes gives spurious eigs
+	(vals, vecs) = spsl.eigsh(Q, k=num_eigs, sigma=0) # Q is guaranteed to be hermitian since it is a real symmetric matrix
+
+	(sorted_vals, eig2_ind, val2, vec2) = get_sorted_eigvals(vals, vecs, eigenval_cutoff)
+
+	placement_order_1d = np.argsort(vec2)
 
 	time_stop = time.clock()
 	time_elapsed = time_stop - time_start
-	return (partition1d, sorted_vals, vals, vecs, time_elapsed)
+	return (placement_order_1d, sorted_vals, vals, vecs, time_elapsed)
 
 
-def calc_cutsize_bipart(adjacency_mat, partition_order, area_balance):
+def calc_cutsize_bipart(adjacency_mat, placement_order, area_balance):
 	time_start = time.clock()
 
 	# Reorder the matrix in partition order
-	adj_reord = adjacency_mat[:, partition_order]
-	adj_reord = adj_reord[partition_order,:]
+	adj_reord = adjacency_mat[:, placement_order]
+	adj_reord = adj_reord[placement_order,:]
 
 	# [FIX] Need to properly work out indexing for array slice
 	if (area_balance > 0.5):
 		area_balance = 1 - area_balance
 
-	start_ind = int(round(area_balance * (len(partition_order) - 1) ))
-	stop_ind = (len(partition_order)-1) - start_ind
+	start_ind = int(round(area_balance * (len(placement_order) - 1) ))
+	stop_ind = (len(placement_order)-1) - start_ind
 
 	split_inds = range(start_ind, stop_ind+1)
 
@@ -213,7 +220,7 @@ def calc_cutsize_bipart(adjacency_mat, partition_order, area_balance):
 	norm_mincut_ind = split_inds[np.argmin(normcut_vec)]
 	norm_mincut_val = np.min(normcut_vec)
 
-	p1_size_frac_vec = np.array(split_inds)/len(partition_order)
+	p1_size_frac_vec = np.array(split_inds)/len(placement_order)
 	time_stop = time.clock()
 
 	time_elapsed = time_stop - time_start
@@ -245,7 +252,7 @@ def convert_cutsize_to_skew( size_frac_vec, cut_info_vec):
 	return ( skew_size_vec, skew_cut_vec)
 
 
-def partition_1d_perturbed(vals, vecs, Qp, eigenval_cutoff=1e-5, num_eigs_solve=10, num_eigs_corr=5):
+def place_1d_perturbed(vals, vecs, Qp, eigenval_cutoff=1e-5, num_eigs_solve=10, num_eigs_corr=5):
 	#(vals, vecs) = la.eigh(Q) # Q is guaranteed to be hermitian since it is a real symmetric matrix
 	time_start = time.clock()
 
@@ -253,17 +260,12 @@ def partition_1d_perturbed(vals, vecs, Qp, eigenval_cutoff=1e-5, num_eigs_solve=
 	sorted_vals = np.argsort(vals)
 
 	# Sparse eigenvalue solver sometimes gives us spurious small eigs. We need to sift them out before we do any processing
-	sorted_vals_raw = np.argsort(vals)
-	sorted_vals = []
-	sorted_vals.append( np.min(np.abs(vals)) ) # First eigenvalue of the laplacian matrix will always be 0. spe
-	for el in sorted_vals_raw:
-		if (vals[el] > eigenval_cutoff):
-			sorted_vals.append(vals[el])
+	(sorted_vals, eig2_ind, val2, vec2) = get_sorted_eigvals(vals, vecs, eigenval_cutoff)
 
 	time_eig_standard = time.clock()
 
 	if ( len(sorted_vals) == 1):
-		print("partition_1d: Error! Not enough valid eigenvalues. Rerun with num_eigs > 10")
+		print("place_1d: Error! Not enough valid eigenvalues. Rerun with num_eigs > 10")
 
 
 	#vals = np.matrix(vals)
@@ -289,15 +291,15 @@ def partition_1d_perturbed(vals, vecs, Qp, eigenval_cutoff=1e-5, num_eigs_solve=
 		bot = val2 - vals[ eigi_ind ]
 		vec_approx = vec_approx + (top/bot)*vv
 
-	partition1d = np.argsort((vec_approx.T))
-	partition1d = list(partition1d[0]) # Converting this back to a list. the array access is because the NP ndarray is 10x1 and
+	placement_order_1d = np.argsort((vec_approx.T))
+	placement_order_1d = list(placement_order_1d[0]) # Converting this back to a list. the array access is because the NP ndarray is 10x1 and
 									   # we just want a normal "dimensionless" 10 element list
 	time_stop = time.clock()
 	#time_elapsed_tot = time_stop - time_start
 	time_elapsed_eig_standard = time_eig_standard - time_start
-	time_elapsed_partition_perturbed = time_stop - time_eig_standard
+	time_elapsed_place1d_perturbed = time_stop - time_eig_standard
 
-	return (partition1d, time_elapsed_partition_perturbed, time_elapsed_eig_standard)
+	return (placement_order_1d, time_elapsed_place1d_perturbed, time_elapsed_eig_standard)
 
 
 def construct_component_map(dict_file_name):
@@ -400,14 +402,14 @@ def is_symmetric(m):
     return check
 
 
-def test():
+def compare_partition_schemes(hgr_filename, perturbed_filename):
 
 	cur_dir = os.getcwd()
 	base_dir = os.path.dirname( cur_dir )
 	netlist_dir = os.path.join(base_dir, "netlists")
 
-	hgr_filename = "p2.hgr"
-	perturbed_filename = "p2.hgr"
+	#hgr_filename = "p2.hgr"
+	#perturbed_filename = "p2.hgr"
 
 	hgr = os.path.join( netlist_dir, hgr_filename )
 	perturbed = os.path.join( netlist_dir, perturbed_filename )
@@ -415,9 +417,9 @@ def test():
 	num_eigs = 20
 	delim =  " "
 	num_partitions = 2
-	eigenval_cutoff = 1e-5
+	eigenval_cutoff = 1e-3
 	index_offset = 1
-	unbalance_factor = 45
+	unbalance_factor = 50
 
 	infile_name = hgr # Reconstruct filenames with spaces
 	infile_p_name = perturbed # Reconstruct filenames with spaces
@@ -427,11 +429,11 @@ def test():
 
 	(Q, D, A, time_parse_exact) = parse_hgr_sparse(infile_name,delim=delim, index_offset=index_offset)
 
-	(partition_order, eigvals, raw_eigvals, raw_eigvecs, time_partition_exact) = partition_1d(Q, eigenval_cutoff = eigenval_cutoff, num_eigs = num_eigs)
+	(placement_order, eigvals, raw_eigvals, raw_eigvecs, time_partition_exact) = place_1d(Q, eigenval_cutoff = eigenval_cutoff, num_eigs = num_eigs)
 
 
 	print("Finding cutsize of system...")
-	(mincut_val, mincut_ind, cutsize_vec, normcut_ind, normcut_val, normcut_vec, p1_size_frac_vec, skew_size_vec, skew_cut_vec, skew_normcut_vec, time_cutsize_exact) = calc_cutsize_bipart(A, partition_order, area_balance)
+	(mincut_val, mincut_ind, cutsize_vec, normcut_ind, normcut_val, normcut_vec, p1_size_frac_vec, skew_size_vec, skew_cut_vec, skew_normcut_vec, time_cutsize_exact) = calc_cutsize_bipart(A, placement_order, area_balance)
 
 
 	if (run_perturbed):
@@ -439,9 +441,9 @@ def test():
 		(Qp_exact, Dp_e, Ap_e, time_parse_perturbed) = parse_hgr_sparse(infile_p_name, delim=delim, index_offset=index_offset)
 		Qp = Qp_exact - Q
 
-		(p1dp, time_partition_perturbed, time_eig_standard) = partition_1d_perturbed(raw_eigvals, raw_eigvecs, Qp, eigenval_cutoff = eigenval_cutoff, num_eigs_solve = num_eigs)
+		(p1dp, time_partition_perturbed, time_eig_standard) = place_1d_perturbed(raw_eigvals, raw_eigvecs, Qp, eigenval_cutoff = eigenval_cutoff, num_eigs_solve = num_eigs)
 
-		(p1dpe, vals_sorted_pe, vals_raw_pe, vecs_raw_pe, time_partition_perturbed_exact)  = partition_1d(Qp_exact, eigenval_cutoff = eigenval_cutoff, num_eigs = num_eigs)
+		(p1dpe, vals_sorted_pe, vals_raw_pe, vecs_raw_pe, time_partition_perturbed_exact)  = place_1d(Qp_exact, eigenval_cutoff = eigenval_cutoff, num_eigs = num_eigs)
 
 		print("Finding cutsize of perturbed system...")
 		(mincut_val_p, mincut_ind_p, cutsize_vec_p, normcut_ind_p, normcut_val_p, normcut_vec_p, p1_size_frac_vec_p, skew_size_vec_p, skew_cut_vec_p, skew_normcut_vec_p, time_cutsize_perturbed) = calc_cutsize_bipart(Ap_e, p1dp, area_balance) # uses exact adjacency matrix, since that part can be known just based on connectivity, without actually solving eig problem
@@ -455,24 +457,32 @@ def test():
 		pl.plot(p1_size_frac_vec, cutsize_vec, 'k')
 		pl.plot(p1_size_frac_vec_p, cutsize_vec_p, 'r')
 		pl.plot(p1_size_frac_vec_pe, cutsize_vec_pe, 'b')
+		pl.xlabel('Skew')
+		pl.ylabel('Cutsize')
 
 		pl.figure(2)
 		pl.hold(True)
 		pl.plot(p1_size_frac_vec, normcut_vec, 'k')
 		pl.plot(p1_size_frac_vec_p, normcut_vec_p, 'r')
 		pl.plot(p1_size_frac_vec_pe, normcut_vec_pe, 'b')
+		pl.xlabel('Skew')
+		pl.ylabel('Ratio cut')
 
 		pl.figure(3)
 		pl.hold(True)
 		pl.plot(skew_size_vec, skew_cut_vec, 'k')
 		pl.plot(skew_size_vec_p, skew_cut_vec_p, 'r')
 		pl.plot(skew_size_vec_pe, skew_cut_vec_pe, 'b')
+		pl.xlabel('Skew')
+		pl.ylabel('Cutsize')
 
 		pl.figure(4)
 		pl.hold(True)
 		pl.plot(skew_size_vec, skew_normcut_vec, 'k')
 		pl.plot(skew_size_vec_p, skew_normcut_vec_p, 'r')
 		pl.plot(skew_size_vec_pe, skew_normcut_vec_pe, 'b')
+		pl.xlabel('Skew')
+		pl.ylabel('Ratio cut')
 		print("{0:>16s}\t{1:<16.3g} \n {2:>16s}\t{3:<16.3g} \n {4:>16s}\t{5:<16.3g} \n ".format("t_par_exact", time_partition_exact, "t_par_per_ex", time_partition_perturbed_exact, "t_par_per", time_partition_perturbed) )
 #		print("{0:^16.3g}\t{1:^16.3g}\t{2:^16.3g}".format(time_partition_exact, time_partition_perturbed_exact, time_partition_perturbed) )
 
