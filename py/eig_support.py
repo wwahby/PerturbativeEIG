@@ -173,7 +173,7 @@ def get_sorted_eigvals(vals, vecs, eigenval_cutoff):
 
 
 
-def place_1d(Q, eigenval_cutoff=1e-25, num_eigs = 10):
+def place_1d(Q, eigenval_cutoff=1e-5, num_eigs = 10):
 	time_start = time.clock()
 	# Finding more eigs than we need because sparse eigsh sometimes gives spurious eigs
 	(vals, vecs) = spsl.eigsh(Q, k=num_eigs, sigma=0) # Q is guaranteed to be hermitian since it is a real symmetric matrix
@@ -417,9 +417,9 @@ def compare_partition_schemes(hgr_filename, perturbed_filename):
 	num_eigs = 20
 	delim =  " "
 	num_partitions = 2
-	eigenval_cutoff = 1e-3
+	eigenval_cutoff = 1e-15
 	index_offset = 1
-	unbalance_factor = 50
+	unbalance_factor = 5
 
 	infile_name = hgr # Reconstruct filenames with spaces
 	infile_p_name = perturbed # Reconstruct filenames with spaces
@@ -427,64 +427,72 @@ def compare_partition_schemes(hgr_filename, perturbed_filename):
 
 	area_balance = 0.5 - unbalance_factor/100
 
+	print("Parsing original graph...")
 	(Q, D, A, time_parse_exact) = parse_hgr_sparse(infile_name,delim=delim, index_offset=index_offset)
 
-	(placement_order, eigvals, raw_eigvals, raw_eigvecs, time_partition_exact) = place_1d(Q, eigenval_cutoff = eigenval_cutoff, num_eigs = num_eigs)
+	print("Constructing optimal 1D placement for original graph...")
+	(placement_order, eigvals, raw_eigvals, raw_eigvecs, time_place_exact) = place_1d(Q, eigenval_cutoff = eigenval_cutoff, num_eigs = num_eigs)
 
-
-	print("Finding cutsize of system...")
+	print("Finding cutsize of original system...")
 	(mincut_val, mincut_ind, cutsize_vec, normcut_ind, normcut_val, normcut_vec, p1_size_frac_vec, skew_size_vec, skew_cut_vec, skew_normcut_vec, time_cutsize_exact) = calc_cutsize_bipart(A, placement_order, area_balance)
 
 
-	if (run_perturbed):
+	# Perturbed Solutions
+	time_start_construct_laplacian_perturbed = time.clock()
+	(Qp_exact, Dp_e, Ap_e, time_parse_perturbed_exact) = parse_hgr_sparse(infile_p_name, delim=delim, index_offset=index_offset)
+	Qp = Qp_exact - Q
+	time_stop_construct_laplacian_perturbed = time.clock()
+	time_construct_laplacian_perturbed = time_stop_construct_laplacian_perturbed - time_start_construct_laplacian_perturbed
 
-		(Qp_exact, Dp_e, Ap_e, time_parse_perturbed) = parse_hgr_sparse(infile_p_name, delim=delim, index_offset=index_offset)
-		Qp = Qp_exact - Q
+	print("Constructing approximate 1D placement for perturbed system...")
+	(p1dp, time_place_perturbed, time_eig_standard) = place_1d_perturbed(raw_eigvals, raw_eigvecs, Qp, eigenval_cutoff = eigenval_cutoff, num_eigs_solve = num_eigs)
 
-		(p1dp, time_partition_perturbed, time_eig_standard) = place_1d_perturbed(raw_eigvals, raw_eigvecs, Qp, eigenval_cutoff = eigenval_cutoff, num_eigs_solve = num_eigs)
+	print("Constructing optimal 1D placement for perturbed system...")
+	(p1dpe, vals_sorted_pe, vals_raw_pe, vecs_raw_pe, time_place_perturbed_exact)  = place_1d(Qp_exact, eigenval_cutoff = eigenval_cutoff, num_eigs = num_eigs)
 
-		(p1dpe, vals_sorted_pe, vals_raw_pe, vecs_raw_pe, time_partition_perturbed_exact)  = place_1d(Qp_exact, eigenval_cutoff = eigenval_cutoff, num_eigs = num_eigs)
+	print("Finding cutsize of approximately perturbed system...")
+	(mincut_val_p, mincut_ind_p, cutsize_vec_p, normcut_ind_p, normcut_val_p, normcut_vec_p, p1_size_frac_vec_p, skew_size_vec_p, skew_cut_vec_p, skew_normcut_vec_p, time_cutsize_perturbed) = calc_cutsize_bipart(Ap_e, p1dp, area_balance) # uses exact adjacency matrix, since that part can be known just based on connectivity, without actually solving eig problem
 
-		print("Finding cutsize of perturbed system...")
-		(mincut_val_p, mincut_ind_p, cutsize_vec_p, normcut_ind_p, normcut_val_p, normcut_vec_p, p1_size_frac_vec_p, skew_size_vec_p, skew_cut_vec_p, skew_normcut_vec_p, time_cutsize_perturbed) = calc_cutsize_bipart(Ap_e, p1dp, area_balance) # uses exact adjacency matrix, since that part can be known just based on connectivity, without actually solving eig problem
-
-		print("Finding cutsize of exact solution to perturbed system...")
-		(mincut_val_pe, mincut_ind_pe, cutsize_vec_pe, normcut_ind_pe, normcut_val_pe, normcut_vec_pe, p1_size_frac_vec_pe, skew_size_vec_pe, skew_cut_vec_pe, skew_normcut_vec_pe, time_cutsize_perturbed_exact) = calc_cutsize_bipart(Ap_e, p1dpe, area_balance)
-
-		## Figures
-		pl.figure(1)
-		pl.hold(True)
-		pl.plot(p1_size_frac_vec, cutsize_vec, 'k')
-		pl.plot(p1_size_frac_vec_p, cutsize_vec_p, 'r')
-		pl.plot(p1_size_frac_vec_pe, cutsize_vec_pe, 'b')
-		pl.xlabel('Skew')
-		pl.ylabel('Cutsize')
-
-		pl.figure(2)
-		pl.hold(True)
-		pl.plot(p1_size_frac_vec, normcut_vec, 'k')
-		pl.plot(p1_size_frac_vec_p, normcut_vec_p, 'r')
-		pl.plot(p1_size_frac_vec_pe, normcut_vec_pe, 'b')
-		pl.xlabel('Skew')
-		pl.ylabel('Ratio cut')
-
-		pl.figure(3)
-		pl.hold(True)
-		pl.plot(skew_size_vec, skew_cut_vec, 'k')
-		pl.plot(skew_size_vec_p, skew_cut_vec_p, 'r')
-		pl.plot(skew_size_vec_pe, skew_cut_vec_pe, 'b')
-		pl.xlabel('Skew')
-		pl.ylabel('Cutsize')
-
-		pl.figure(4)
-		pl.hold(True)
-		pl.plot(skew_size_vec, skew_normcut_vec, 'k')
-		pl.plot(skew_size_vec_p, skew_normcut_vec_p, 'r')
-		pl.plot(skew_size_vec_pe, skew_normcut_vec_pe, 'b')
-		pl.xlabel('Skew')
-		pl.ylabel('Ratio cut')
-		print("{0:>16s}\t{1:<16.3g} \n {2:>16s}\t{3:<16.3g} \n {4:>16s}\t{5:<16.3g} \n ".format("t_par_exact", time_partition_exact, "t_par_per_ex", time_partition_perturbed_exact, "t_par_per", time_partition_perturbed) )
-#		print("{0:^16.3g}\t{1:^16.3g}\t{2:^16.3g}".format(time_partition_exact, time_partition_perturbed_exact, time_partition_perturbed) )
+	print("Finding cutsize of exact solution to perturbed system...")
+	(mincut_val_pe, mincut_ind_pe, cutsize_vec_pe, normcut_ind_pe, normcut_val_pe, normcut_vec_pe, p1_size_frac_vec_pe, skew_size_vec_pe, skew_cut_vec_pe, skew_normcut_vec_pe, time_cutsize_perturbed_exact) = calc_cutsize_bipart(Ap_e, p1dpe, area_balance)
 
 
+	time_total_exact = time_parse_exact + time_place_exact + time_cutsize_exact
+	time_total_perturbed_exact = time_parse_perturbed_exact + time_place_perturbed_exact + time_cutsize_perturbed_exact
+	time_total_perturbed_approx = time_parse_perturbed_exact + time_construct_laplacian_perturbed + time_place_perturbed + time_cutsize_perturbed
+
+	## Figures
+	pl.figure(1)
+	pl.hold(True)
+	pl.plot(p1_size_frac_vec, cutsize_vec, 'k')
+	pl.plot(p1_size_frac_vec_p, cutsize_vec_p, 'r')
+	pl.plot(p1_size_frac_vec_pe, cutsize_vec_pe, 'b')
+	pl.xlabel('P1 Size Fraction')
+	pl.ylabel('Cutsize')
+
+	pl.figure(2)
+	pl.hold(True)
+	pl.plot(p1_size_frac_vec, normcut_vec, 'k')
+	pl.plot(p1_size_frac_vec_p, normcut_vec_p, 'r')
+	pl.plot(p1_size_frac_vec_pe, normcut_vec_pe, 'b')
+	pl.xlabel('Skew')
+	pl.ylabel('P1 Size Fraction')
+
+	pl.figure(3)
+	pl.hold(True)
+	pl.plot(skew_size_vec, skew_cut_vec, 'k')
+	pl.plot(skew_size_vec_p, skew_cut_vec_p, 'r')
+	pl.plot(skew_size_vec_pe, skew_cut_vec_pe, 'b')
+	pl.xlabel('Skew')
+	pl.ylabel('Cutsize')
+
+	pl.figure(4)
+	pl.hold(True)
+	pl.plot(skew_size_vec, skew_normcut_vec, 'k')
+	pl.plot(skew_size_vec_p, skew_normcut_vec_p, 'r')
+	pl.plot(skew_size_vec_pe, skew_normcut_vec_pe, 'b')
+	pl.xlabel('Skew')
+	pl.ylabel('Ratio cut')
+	print("{0:>16s}\t{1:<16.3g} \n {2:>16s}\t{3:<16.3g} \n {4:>16s}\t{5:<16.3g} \n ".format("t_par_exact", time_place_exact, "t_par_per_ex", time_place_perturbed_exact, "t_par_per", time_place_perturbed) )
+	print("{0:>32s}\t{1:<16s}\n{2:>32s}\t{3:<16.3g} \n {4:>32s}\t{5:<16.3g} \n {6:>32s}\t{7:<16.3g} \n {8:>32s}\t{9:<16.3g}".format("Case", "Total Time (s)", "Original", time_total_exact, "Perturbed (exact)", time_total_perturbed_exact, "Perturbed (approx)", time_total_perturbed_approx, "Perturbed (approx, !parse)", time_total_perturbed_approx - time_parse_perturbed_exact) )
 
