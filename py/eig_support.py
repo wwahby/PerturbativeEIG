@@ -402,6 +402,23 @@ def is_symmetric(m):
     return check
 
 
+def ecdf(data, down_sampling_step=1, type="end"):
+
+	if (type == "mid"):
+		adjustment = 0.5
+	elif (type == "end"):
+		adjustment = 1
+	elif (type == "start"):
+		adjustment = 0
+	else:
+		raise ValueError("Valid types are mid, end, and start")
+
+	data_sorted = np.sort( data )
+	ecdf_vec = (np.arange( len(data_sorted) ) + adjustment) / float(len(data_sorted))
+
+	return( ecdf_vec, data_sorted )
+
+
 def compare_partition_schemes(hgr_filename, perturbed_filename, repetitions=1):
 
 	cur_dir = os.getcwd()
@@ -417,7 +434,7 @@ def compare_partition_schemes(hgr_filename, perturbed_filename, repetitions=1):
 	num_eigs = 20
 	delim =  " "
 	num_partitions = 2
-	eigenval_cutoff = 1e-15
+	eigenval_cutoff = 1e-5
 	index_offset = 1
 	unbalance_factor = 5
 
@@ -543,6 +560,19 @@ def compare_partition_schemes(hgr_filename, perturbed_filename, repetitions=1):
 		ratiocut_skew_perturbed_exact_vec[rep_ind] = skew_ratiocut_perturbed_exact
 		ratiocut_skew_perturbed_approx_vec[rep_ind] = skew_ratiocut_perturbed_approx
 
+	(time_orig_ecdf, time_orig_sorted) = ecdf(time_total_exact_vec)
+	(time_pe_ecdf, time_pe_sorted) = ecdf(time_total_perturbed_exact_vec)
+	(time_pa_ecdf, time_pa_sorted) = ecdf(time_total_perturbed_approx_vec)
+
+	(mincut_orig_ecdf, mincut_orig_sorted) = ecdf(mincut_val_orig_vec)
+	(mincut_pe_ecdf, mincut_pe_sorted) = ecdf(mincut_val_perturbed_exact_vec)
+	(mincut_pa_ecdf, mincut_pa_sorted) = ecdf(mincut_val_perturbed_approx_vec)
+
+	(ratiocut_orig_ecdf, ratiocut_orig_sorted) = ecdf(ratiocut_val_orig_vec)
+	(ratiocut_pe_ecdf, ratiocut_pe_sorted) = ecdf(ratiocut_val_perturbed_exact_vec)
+	(ratiocut_pa_ecdf, ratiocut_pa_sorted) = ecdf(ratiocut_val_perturbed_approx_vec)
+
+
 	## Figures ( just plot the last run)
 	pl.figure(1)
 	pl.hold(True)
@@ -575,6 +605,36 @@ def compare_partition_schemes(hgr_filename, perturbed_filename, repetitions=1):
 	pl.plot(skew_size_vec_pe, skew_normcut_vec_pe, 'b')
 	pl.xlabel('Skew')
 	pl.ylabel('Ratio cut')
+
+	pl.figure(5)
+	pl.clf()
+	pl.hold(True)
+	pl.plot(time_orig_sorted, time_orig_ecdf, 'k')
+	pl.plot(time_pe_sorted, time_pe_ecdf, 'b')
+	pl.plot(time_pa_sorted, time_pe_ecdf, 'r')
+	pl.xlabel('Time(s)')
+	pl.ylabel('ECDF')
+
+	pl.figure(6)
+	pl.clf()
+	pl.hold(True)
+	pl.plot(mincut_orig_sorted, mincut_orig_ecdf, 'k')
+	pl.plot(mincut_pe_sorted, mincut_pe_ecdf, 'b')
+	pl.plot(mincut_pa_sorted, mincut_pe_ecdf, 'r')
+	pl.xlabel('Mincut')
+	pl.ylabel('ECDF')
+
+	pl.figure(7)
+	pl.clf()
+	pl.hold(True)
+	pl.plot(ratiocut_orig_sorted, ratiocut_orig_ecdf, 'k')
+	pl.plot(ratiocut_pe_sorted, ratiocut_pe_ecdf, 'b')
+	pl.plot(ratiocut_pa_sorted, ratiocut_pe_ecdf, 'r')
+	pl.xlabel('Ratio cut')
+	pl.ylabel('ECDF')
+
+
+
 	print("{0:>16s}\t{1:<16.3g} \n {2:>16s}\t{3:<16.3g} \n {4:>16s}\t{5:<16.3g} \n ".format("t_par_exact", time_place_exact, "t_par_per_ex", time_place_perturbed_exact, "t_par_per", time_place_perturbed_approx) )
 	print("{0:>32s}\t{1:<16s}\n{2:>32s}\t{3:<16.3g} \n {4:>32s}\t{5:<16.3g} \n {6:>32s}\t{7:<16.3g} \n {8:>32s}\t{9:<16.3g}".format("Case", "Total Time (s)", "Original", time_total_exact, "Perturbed (exact)", time_total_perturbed_exact, "Perturbed (approx)", time_total_perturbed_approx, "Perturbed (approx, !parse)", time_total_perturbed_approx - time_parse_perturbed_exact) )
 
