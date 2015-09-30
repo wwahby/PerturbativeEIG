@@ -2,6 +2,7 @@ import numpy as np	# array handling
 #import scipy.linalg as la	# eigenvalues
 import scipy.sparse as sps # Sparse matrices
 import scipy.sparse.linalg as spsl
+import numpy.linalg as npla
 #import numpy.ma as ma
 import math
 import pylab as pl
@@ -155,19 +156,19 @@ def parse_hgr_sparse(infile_name, delim=" ", index_offset=0):
 def get_sorted_eigvals(vals, vecs, eigenval_cutoff):
 	# Sparse eigenvalue solver sometimes gives us spurious small eigs. We need to sift them out before we do any processing
 
-	sorted_vals_raw = np.argsort(vals)
+	sorted_val_inds = np.argsort(vals)
 	sorted_vals = []
 	sorted_vals.append( np.min(np.abs(vals)) ) # First eigenvalue of the laplacian matrix will always be 0. spe
-	for el in sorted_vals_raw:
-		if (vals[el] > eigenval_cutoff) and ( np.isreal(vals[el]) ):
+	for svi_idx, el in enumerate(sorted_val_inds):
+		if (vals[el] >= eigenval_cutoff) and ( np.isreal(vals[el]) and (svi_idx > 0) ): # skip first eigenvalue since we're using that as the zero eig
 			real_part = np.real(vals[el])
 			sorted_vals.append( real_part  ) # stripping off complex part (which should be zero as per conditional above)
 
 	if ( len(sorted_vals) == 1):
-		print("place_1d: Error! Not enough valid eigenvalues. Rerun with num_eigs > 10")
+		print("place_1d: Error! Not enough valid eigenvalues. Increase num_eigs and rerun!")
 	eig2_ind = int(sorted_vals[1]) # index of second eigenvalue/eigenvector
 	val2 = vals[ eig2_ind ]
-	vec2 = vecs[:,eig2_ind ]
+	vec2 = vecs[:, eig2_ind ]
 
 	return (sorted_vals, eig2_ind, val2, vec2)
 
@@ -176,7 +177,8 @@ def get_sorted_eigvals(vals, vecs, eigenval_cutoff):
 def place_1d(Q, eigenval_cutoff=1e-5, num_eigs = 10):
 	time_start = time.clock()
 	# Finding more eigs than we need because sparse eigsh sometimes gives spurious eigs
-	(vals, vecs) = spsl.eigsh(Q, k=num_eigs, sigma=0) # Q is guaranteed to be hermitian since it is a real symmetric matrix
+	(vals, vecs) = spsl.eigsh(Q, k=num_eigs, which='SM') # Q is guaranteed to be hermitian since it is a real symmetric matrix
+	#(vals, vecs) = npla.eigh(Q.todense()) # Q is guaranteed to be hermitian since it is a real symmetric matrix
 
 	(sorted_vals, eig2_ind, val2, vec2) = get_sorted_eigvals(vals, vecs, eigenval_cutoff)
 
@@ -184,6 +186,16 @@ def place_1d(Q, eigenval_cutoff=1e-5, num_eigs = 10):
 
 	time_stop = time.clock()
 	time_elapsed = time_stop - time_start
+
+	# Checking for non-orthnormal eigenvectors
+#	shape = np.shape(vecs)
+#	num_vecs = shape[1]
+#	for vec_ind in range(num_vecs):
+#		vec = vecs[:, vec_ind]
+#		prod = vec.T.dot( vec )
+#		print("Ind: {0:d} \t Val: {1:.3g} \t Prod_err: {2:.3g}".format(vec_ind, vals[vec_ind], 1 - abs(prod) ) )
+
+
 	return (placement_order_1d, sorted_vals, vals, vecs, time_elapsed)
 
 
@@ -419,7 +431,7 @@ def ecdf(data, down_sampling_step=1, type="end"):
 	return( ecdf_vec, data_sorted )
 
 
-def compare_partition_schemes(hgr_filename, perturbed_filename, repetitions=1):
+def compare_partition_schemes(hgr_filename, perturbed_filename, repetitions=1, num_eigs=20):
 
 	cur_dir = os.getcwd()
 	base_dir = os.path.dirname( cur_dir )
@@ -431,10 +443,10 @@ def compare_partition_schemes(hgr_filename, perturbed_filename, repetitions=1):
 	hgr = os.path.join( netlist_dir, hgr_filename )
 	perturbed = os.path.join( netlist_dir, perturbed_filename )
 
-	num_eigs = 20
+	#num_eigs = 20
 	delim =  " "
 	num_partitions = 2
-	eigenval_cutoff = 1e-5
+	eigenval_cutoff = 0
 	index_offset = 1
 	unbalance_factor = 5
 
@@ -478,6 +490,7 @@ def compare_partition_schemes(hgr_filename, perturbed_filename, repetitions=1):
 
 
 	for rep_ind in range(repetitions):
+		print("\nIteration {0:d}\n=====================".format(rep_ind) )
 		print("Parsing original graph...")
 		(Q, D, A, time_parse_exact) = parse_hgr_sparse(infile_name,delim=delim, index_offset=index_offset)
 

@@ -1,6 +1,6 @@
 % test eig_partitioner function
-filename = '../netlists/biomedP.hgr';
-filename_p = '../netlists/biomedP_add05.hgr';
+filename = '../netlists/p2.hgr';
+filename_p = '../netlists/p2_add05.hgr';
 num_eigs = 7;
 node_areas = 1; % all nodes have unit area
 area_constraint = 0.55; % schmoo across all possible area splits (set this intentionally low so we have a minimum of 1e-3% of the nodes on one side and the rest on the other, and try all partitions between that and 1-1e5)
@@ -47,7 +47,7 @@ skew_mc_vec_pa = zeros(1,iterations);
 
 for i= 1:iterations
     
-    repstr = sprintf('Iteration %d of %d',i,iterations);
+    repstr = sprintf('\nIteration %d of %d\n===============',i,iterations);
     disp(repstr);
     %% Run EIG to find exact partitioning results for original and perturbed systems
     [metrics times matrices eigs] = eig_partitioner(filename,num_eigs,node_areas,area_constraint); % normal
