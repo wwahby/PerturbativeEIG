@@ -36,7 +36,7 @@ vals = vals(posvals);
 vecs = vecs(:,posvals);
 
 %% Throw away really tiny positive values, as they're probably spurious too
-bigvals = (vals > 1e-5);
+bigvals = (vals > 1e-7);
 
 % we need to keep the first "zero" eigenvalue
 if(isempty(bigvals)) % do nothing if no good eigenvalues
