@@ -8,7 +8,8 @@ if issparse(Q)
     opts.isreal = true; % The laplacian is real, so use some optimizations
     opts.disp = 0; % don't spam the console with info about the solution
 %     opts.tol = 1e-20; % really fine tolerance
-%     opts.maxit = 3e4; % lots of iterations
+    opts.maxit = 3e4; % lots of iterations
+
     Q = (Q + Q')/2; % Ensure symmetry
     [vecs vals] = eigs(Q,num_eigs,'SA',opts); % using -1 because in some cases 'SM' or 0 will cause poorly-conditioned matrices during LU factorization
     % This seems to be happening because eigs uses our input as a shift value during factorization (or something)
