@@ -28,11 +28,11 @@ clear all
 % filename = '../netlists/ibm01.hgr';
 % filename_p = '../netlists/ibm01_add05.hgr';
 % filename_p = '../netlists/ibm01_del05a.hgr';
-% filename = '../netlists/industry3.hgr';
-% filename_p = '../netlists/industry3_add05.hgr';
+filename = '../netlists/industry3.hgr';
+filename_p = '../netlists/industry3_add05.hgr';
 % filename_p = '../netlists/industry3_del05a.hgr';
-filename = '../netlists/synnet_no1_2.hgr';
-filename_p = '../netlists/synnet_no1_mod_2.hgr';
+% filename = '../netlists/synnet_no1_2.hgr';
+% filename_p = '../netlists/synnet_no1_mod_2.hgr';
 %% Warning! Here be monsters. Have more than 3GB RAM free before you try to run these
 % filename = '../netlists/ibm10.hgr';
 % filename_p = '../netlists/ibm10_add01.hgr';
@@ -53,21 +53,22 @@ num_runs = 10;
 metrics_cell = cell(3,num_runs);
 time_cell = cell(3,num_runs);
 time_vecs = zeros(3, num_runs);
+eig_cell = cell(3, num_runs);
 
 for rind = 1:num_runs
     fprintf('Beginning iteration %d/%d...\n', rind, num_runs)
     % Run EIG to find exact partitioning results for original and perturbed systems
     fprintf('\tPartitioning original graph...\n')
-    [metrics times matrices eigs] = eig_partitioner(filename,num_eigs,node_areas,area_constraint); % normal
+    [metrics, times, matrices, eigs] = eig_partitioner(filename,num_eigs,node_areas,area_constraint); % normal
     fprintf('\tPartitioning perturbed graph (exact)...\n')
-    [metrics_pe times_pe matrices_pe eigs_pe] = eig_partitioner(filename_p,num_eigs,node_areas,area_constraint); % exact perturbation, only need 2 eigenvalues here
+    [metrics_pe, times_pe, matrices_pe, eigs_pe] = eig_partitioner(filename_p,num_eigs,node_areas,area_constraint); % exact perturbation, only need 2 eigenvalues here
 
 
 
     % Run the perturbed solver
     eigs_to_correct = 2;
     fprintf('\tPartitioning perturbed graph (approximate)...\n')
-    [metrics_p times_p matrices_p eigs_p] = eig_partitioner_perturbed(filename_p,matrices.laplacian,eigs.vals,eigs.vecs,node_areas,area_constraint,eigs_to_correct); % approx perturbation
+    [metrics_p, times_p, matrices_p, eigs_p] = eig_partitioner_perturbed(filename_p,matrices.laplacian,eigs.vals,eigs.vecs,node_areas,area_constraint,eigs_to_correct); % approx perturbation
    
     metrics_cell{1,rind} = metrics;
     metrics_cell{2,rind} = metrics_pe;
@@ -80,6 +81,10 @@ for rind = 1:num_runs
     time_vecs(1,rind) = times.total;
     time_vecs(2,rind) = times_pe.total;
     time_vecs(3,rind) = times_p.total;
+    
+    eig_cell{1,rind} = eigs;
+    eig_cell{2,rind} = eigs_pe;
+    eig_cell{3,rind} = eigs_p;
 end
 
 %% Plot all cutsize vectors
@@ -205,3 +210,19 @@ ylabel('Cumulative distribution')
 title('Time distribution')
 fixfigs(9,3,14,12)
 set(gca,'xscale','log')
+
+%% All Eigs
+
+figure(10)
+clf
+hold on
+for rind = 1:num_runs
+    plot(eig_cell{1,rind}.vals,'k')
+    plot(eig_cell{2,rind}.vals,'b')
+    plot(eig_cell{3,rind}.vals,'r')
+end
+ylabel('Eigenvalues')
+set(gca,'yscale','log')
+title('Eigenvalues multiple times')
+fixfigs(10,3,14,12)
+
