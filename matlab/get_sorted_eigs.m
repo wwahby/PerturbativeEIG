@@ -9,7 +9,8 @@ if issparse(Q)
     opts.disp = 0; % don't spam the console with info about the solution
 %     opts.tol = 1e-20; % really fine tolerance
 %     opts.maxit = 3e4; % lots of iterations
-    [vecs vals] = eigs(Q,num_eigs,-1,opts); % using -1 because in some cases 'SM' or 0 will cause poorly-conditioned matrices during LU factorization
+    Q = (Q + Q')/2; % Ensure symmetry
+    [vecs vals] = eigs(Q,num_eigs,'SA',opts); % using -1 because in some cases 'SM' or 0 will cause poorly-conditioned matrices during LU factorization
     % This seems to be happening because eigs uses our input as a shift value during factorization (or something)
     % -1 should still be fine since all eigenvalues should be >= 0, so
     % we'll get the same behavior as using 'SM', but without the issues of
