@@ -4,10 +4,10 @@ tic
 % read in the netlist
 [Q D A] = parse_hgr_sparse_alt3(filename);
 time_parse = toc;
-disp('...HGR Parsing done!')
+%disp('...HGR Parsing done!')
 
 tic
 % Get the sorted eigenvalues and eigenvectors
 [vals vecs] = get_sorted_eigs(Q,num_eigs);
 time_eig = toc;
-disp('...Eigenvalues found!')
+%disp('...Eigenvalues found!')
