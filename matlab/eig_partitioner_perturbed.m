@@ -49,7 +49,9 @@ function [metrics times matrices eigs] = eig_partitioner_perturbed(perturbed_net
 % (for partitioning) and the new adjacency matrix (which will be used for cutsize evaluation)
 tic
 [Qpe Dpe Ape] = parse_hgr_sparse_alt3(perturbed_netlist_file);
+Qpe = (Qpe + Qpe')/2; % Ensure symmetry despite weird rounding errors
 time_parse = toc;
+
 Qp = Qpe - Qorig;
 %% 1D Placement
 num_vecs_to_use = length(vecs(1,:)); % Use all the eigenvectors we're supplied
