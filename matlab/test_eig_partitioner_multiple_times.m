@@ -28,15 +28,15 @@ clear all
 % filename = '../netlists/ibm01.hgr';
 % filename_p = '../netlists/ibm01_add05.hgr';
 % filename_p = '../netlists/ibm01_del05a.hgr';
-filename = '../netlists/industry3.hgr';
-filename_p = '../netlists/industry3_add05.hgr';
+% filename = '../netlists/industry3.hgr';
+% filename_p = '../netlists/industry3_add05.hgr';
 % filename_p = '../netlists/industry3_del05a.hgr';
 % filename = '../netlists/synnet_no1_2.hgr';
 % filename_p = '../netlists/synnet_no1_mod_2.hgr';
 %% Warning! Here be monsters. Have more than 3GB RAM free before you try to run these
-% filename = '../netlists/ibm10.hgr';
+filename = '../netlists/ibm10.hgr';
 % filename_p = '../netlists/ibm10_add01.hgr';
-% filename_p = '../netlists/ibm10_add05.hgr';
+filename_p = '../netlists/ibm10_add05.hgr';
 % filename_p = '../netlists/ibm10_del05a.hgr';
 % filename = '../netlists/ibm18.hgr';
 % filename_p = '../netlists/ibm18_add05.hgr';
@@ -53,6 +53,7 @@ num_runs = 10;
 metrics_cell = cell(3,num_runs);
 time_cell = cell(3,num_runs);
 time_vecs = zeros(3, num_runs);
+time_vecs_no_parse = zeros(3, num_runs);
 eig_cell = cell(3, num_runs);
 
 for rind = 1:num_runs
@@ -82,6 +83,10 @@ for rind = 1:num_runs
     time_vecs(2,rind) = times_pe.total;
     time_vecs(3,rind) = times_p.total;
     
+    time_vecs_no_parse(1,rind) = times.total - times.parse;
+    time_vecs_no_parse(2,rind) = times_pe.total - times.parse;
+    time_vecs_no_parse(3,rind) = times_p.total - times.parse;
+    
     eig_cell{1,rind} = eigs;
     eig_cell{2,rind} = eigs_pe;
     eig_cell{3,rind} = eigs_p;
@@ -89,6 +94,12 @@ end
 
 %% Plot all cutsize vectors
 
+for rind = 1:num_runs
+    time_vecs_no_parse(1,rind) = times.total - times.parse;
+    time_vecs_no_parse(2,rind) = times_pe.total - times.parse;
+    time_vecs_no_parse(3,rind) = times_p.total - times.parse;
+end
+%%
 % Normal cutsize
 figure(1)
 clf
@@ -211,9 +222,24 @@ title('Time distribution')
 fixfigs(9,3,14,12)
 set(gca,'xscale','log')
 
+figure(10)
+clf
+h1 = cdfplot(time_vecs_no_parse(1,:));
+hold on
+h2 = cdfplot(time_vecs_no_parse(2,:));
+h3 = cdfplot(time_vecs_no_parse(3,:));
+set(h1,'color','k')
+set(h2,'color','b')
+set(h3,'color','r')
+xlabel('time (s)')
+ylabel('Cumulative distribution')
+title('Time distribution (parse time excluded)')
+fixfigs(10,3,14,12)
+set(gca,'xscale','log')
+
 %% All Eigs
 
-figure(10)
+figure(11)
 clf
 hold on
 for rind = 1:num_runs
@@ -224,5 +250,5 @@ end
 ylabel('Eigenvalues')
 set(gca,'yscale','log')
 title('Eigenvalues multiple times')
-fixfigs(10,3,14,12)
+fixfigs(11,3,14,12)
 
