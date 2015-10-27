@@ -11,6 +11,7 @@ num_runs = 0;
 max_runs = 10;
 
 while ((sufficient_vals == 0) && (num_runs < max_runs))
+    num_runs = num_runs + 1;
     % Get the sorted eigenvalues and eigenvectors
     tic
     [vals, vecs] = get_sorted_eigs(Q,num_eigs);
@@ -18,6 +19,7 @@ while ((sufficient_vals == 0) && (num_runs < max_runs))
 
     if (length(vals) > 2)
         sufficient_vals = 1;
+    else
+        fprintf('\t\tNot enough true eigenvalues found! Rerunning (%d/%d)...\n',num_runs, max_runs);
     end
-    num_runs = num_runs + 1;
 end
