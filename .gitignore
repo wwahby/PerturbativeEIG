@@ -224,4 +224,5 @@ pip-log.txt
 ## MATLAB
 #############
 *.asv
+*.mat
 
