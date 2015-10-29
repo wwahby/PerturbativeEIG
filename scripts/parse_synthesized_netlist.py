@@ -106,6 +106,10 @@ outfile = open(outfile_name,'w')
 outfile.write(str(num_nets) + delim + str(num_cells) + '\n') # print header info
 for net_ind in range(num_nets):
 	if (len(wire_connection_list[net_ind]) > 1):
-		line_out = delim.join(map(str,wire_connection_list[net_ind]))
+		# our wire IDs are off by 1 from what Metis or Matlab will use, so we just need to correct them here before printing them out
+		wire_id_list = []
+		for el in wire_connection_list[net_ind]:
+			wire_id_list.append(el+1)
+		line_out = delim.join(map(str,wire_id_list))
 		outfile.write(line_out + '\n')
 
