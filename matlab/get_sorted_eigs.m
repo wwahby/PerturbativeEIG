@@ -31,12 +31,12 @@ vecs = vecs(:,order); % get eigenvectors in sorted eigenvalue order
 % them away
 % Best method would be to use 'SM' and shift-invert mode to find actual smallest
 % eigenvalues, but it occasionally fails because 0 is an eigenvalue
-posvals = (vals > 0);
-vals = vals(posvals);
-vecs = vecs(:,posvals);
+% posvals = (vals > 0);
+% vals = vals(posvals);
+% vecs = vecs(:,posvals);
 
 %% Throw away really tiny positive values, as they're probably spurious too
-bigvals = (vals > 1e-7);
+bigvals = (vals > 1e-5);
 
 % we need to keep the first "zero" eigenvalue
 if(isempty(bigvals)) % do nothing if no good eigenvalues

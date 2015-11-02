@@ -15,8 +15,8 @@ clear all
 % filename = '../netlists/structP.hgr';
 % filename_p = '../netlists/structP_add05.hgr';
 % filename_p = '../netlists/structP_del05a.hgr';
-% filename = '../netlists/p2.hgr';
-% filename_p = '../netlists/p2_add05.hgr';
+filename = '../netlists/p2.hgr';
+filename_p = '../netlists/p2_add05.hgr';
 % filename_p = '../netlists/p2_del05a.hgr';
 % filename = '../netlists/biomedP.hgr';
 % filename_p = '../netlists/biomedP_add05.hgr';
@@ -34,9 +34,9 @@ clear all
 % filename = '../netlists/synnet_no1_2.hgr';
 % filename_p = '../netlists/synnet_no1_mod_2.hgr';
 %% Warning! Here be monsters. Have more than 3GB RAM free before you try to run these
-filename = '../netlists/ibm10.hgr';
+% filename = '../netlists/ibm10.hgr';
 % filename_p = '../netlists/ibm10_add01.hgr';
-filename_p = '../netlists/ibm10_add05.hgr';
+% filename_p = '../netlists/ibm10_add05.hgr';
 % filename_p = '../netlists/ibm10_del05a.hgr';
 % filename = '../netlists/ibm18.hgr';
 % filename_p = '../netlists/ibm18_add05.hgr';
@@ -47,7 +47,7 @@ filename_p = '../netlists/ibm10_add05.hgr';
 num_eigs = 10; % number of eigenvalues and eigenvectors to use for the perturbed solution
 node_areas = 1; % all nodes have unit area
 area_constraint = 0.45; % schmoo across all possible area splits (set this intentionally low so we have a minimum of 1e-3% of the nodes on one side and the rest on the other, and try all partitions between that and 1-1e5)
-num_runs = 10;
+num_runs = 5;
 
 %% Rerun num_runs times and store results
 metrics_cell = cell(3,num_runs);
@@ -243,9 +243,9 @@ figure(11)
 clf
 hold on
 for rind = 1:num_runs
-    plot(eig_cell{1,rind}.vals,'k')
-    plot(eig_cell{2,rind}.vals,'b')
-    plot(eig_cell{3,rind}.vals,'r')
+    plot(abs(eig_cell{1,rind}.vals),'k')
+    plot(abs(eig_cell{2,rind}.vals),'b')
+    plot(abs(eig_cell{3,rind}.vals),'r')
 end
 ylabel('Eigenvalues')
 set(gca,'yscale','log')
