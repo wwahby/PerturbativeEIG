@@ -6,6 +6,9 @@ clear all
 % filename indicates original netlist
 % filename_p indicates perturbed netlist
 
+% filename = '../netlists/ckt_f216.hgr';
+% filename_p = '../netlists/ckt_f216_nodes_added_1.hgr';
+% filename_p = '../netlists/ckt_f216_nodes_added_3.hgr';
 % filename = '../netlists/fract.hgr';
 % filename_p = '../netlists/fract_add05.hgr';
 % filename_p = '../netlists/fract_del05a.hgr';
@@ -15,9 +18,10 @@ clear all
 % filename = '../netlists/structP.hgr';
 % filename_p = '../netlists/structP_add05.hgr';
 % filename_p = '../netlists/structP_del05a.hgr';
-filename = '../netlists/p2.hgr';
-filename_p = '../netlists/p2_add05.hgr';
+% filename = '../netlists/p2.hgr';
+% filename_p = '../netlists/p2_add05.hgr';
 % filename_p = '../netlists/p2_del05a.hgr';
+% filename_p = '../netlists/p2_nodes_added_3.hgr';
 % filename = '../netlists/biomedP.hgr';
 % filename_p = '../netlists/biomedP_add05.hgr';
 % filename_p = '../netlists/biomedP_del05a.hgr';
@@ -28,9 +32,10 @@ filename_p = '../netlists/p2_add05.hgr';
 % filename = '../netlists/ibm01.hgr';
 % filename_p = '../netlists/ibm01_add05.hgr';
 % filename_p = '../netlists/ibm01_del05a.hgr';
-% filename = '../netlists/industry3.hgr';
+filename = '../netlists/industry3.hgr';
 % filename_p = '../netlists/industry3_add05.hgr';
 % filename_p = '../netlists/industry3_del05a.hgr';
+filename_p = '../netlists/industry3_nodes_added_3.hgr';
 % filename = '../netlists/synnet_no1_2.hgr';
 % filename_p = '../netlists/synnet_no1_mod_2.hgr';
 %% Warning! Here be monsters. Have more than 3GB RAM free before you try to run these
@@ -46,8 +51,8 @@ filename_p = '../netlists/p2_add05.hgr';
 %% Parameters
 num_eigs = 10; % number of eigenvalues and eigenvectors to use for the perturbed solution
 node_areas = 1; % all nodes have unit area
-area_constraint = 0.45; % schmoo across all possible area splits (set this intentionally low so we have a minimum of 1e-3% of the nodes on one side and the rest on the other, and try all partitions between that and 1-1e5)
-num_runs = 5;
+area_constraint = 0.1; % schmoo across all possible area splits (set this intentionally low so we have a minimum of 1e-3% of the nodes on one side and the rest on the other, and try all partitions between that and 1-1e5)
+num_runs = 10;
 
 %% Rerun num_runs times and store results
 metrics_cell = cell(3,num_runs);
@@ -92,13 +97,6 @@ for rind = 1:num_runs
     eig_cell{3,rind} = eigs_p;
 end
 
-%% Plot all cutsize vectors
-
-for rind = 1:num_runs
-    time_vecs_no_parse(1,rind) = times.total - times.parse;
-    time_vecs_no_parse(2,rind) = times_pe.total - times.parse;
-    time_vecs_no_parse(3,rind) = times_p.total - times.parse;
-end
 %%
 % Normal cutsize
 figure(1)
@@ -220,7 +218,7 @@ xlabel('time (s)')
 ylabel('Cumulative distribution')
 title('Time distribution')
 fixfigs(9,3,14,12)
-set(gca,'xscale','log')
+%set(gca,'xscale','log')
 
 figure(10)
 clf
@@ -235,7 +233,7 @@ xlabel('time (s)')
 ylabel('Cumulative distribution')
 title('Time distribution (parse time excluded)')
 fixfigs(10,3,14,12)
-set(gca,'xscale','log')
+%set(gca,'xscale','log')
 
 %% All Eigs
 

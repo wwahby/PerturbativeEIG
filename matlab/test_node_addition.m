@@ -4,6 +4,10 @@ filename = '../netlists/ckt_f216.hgr';
 filename_p = '../netlists/ckt_f216_nodes_added_1.hgr';
 filename_p = '../netlists/ckt_f216_nodes_added_3.hgr';
 
+num_eigs = 7;
+node_areas = 1;
+area_constraint = 0.45;
+
 fprintf('\tPartitioning original graph...\n')
 [metrics, times, matrices, eigs] = eig_partitioner(filename,num_eigs,node_areas,area_constraint); % normal
 

@@ -52,7 +52,39 @@ tic
 Qpe = (Qpe + Qpe')/2; % Ensure symmetry despite weird rounding errors
 time_parse = toc;
 
-Qp = Qpe - Qorig;
+%% Determine whether nodes have been added
+if (length(Qpe) > length(Qorig))
+    num_eigs = length(vals);
+    Qb = Qpe(length(Qorig)+1:end, length(Qorig)+1:end); % construct new node laplacian
+    
+    num_eigs = min(num_eigs, length(Qb) );
+    [vals_b, vecs_b] = get_sorted_eigs(Qb,num_eigs);
+    %vals_b = diag(vals_b)';
+    
+    vecs_b_full = sparse(length(Qpe), length(vals_b));
+    for vind = 1:length(vecs_b(1,:))
+        vecs_b_full(length(Qorig)+1:end, vind) = vecs_b(:,vind);
+    end
+    
+    vals_ab = [vals', vals_b'];
+    
+    [vals_ab_sorted, vals_ab_sorted_inds] = sort(vals_ab);
+    
+    vecs_ab = sparse(length(Qpe), length(Qpe));
+    vecs_ab(1:end-length(vals_b),1:length(vals)) = vecs;
+    vecs_ab(:,length(Qorig)+1:end) = vecs_b_full(:,1:end);
+    vecs_ab_sorted = vecs_ab(:, vals_ab_sorted_inds);
+    
+    Qo_new = sparse(length(Qpe), length(Qpe));
+    Qo_new(1:length(Qorig), 1:length(Qorig)) = Qorig(1:end, 1:end);
+    
+    Qp = Qpe - Qo_new;
+    vals = vals_ab_sorted;
+    vecs = vecs_ab_sorted;
+else
+    Qp = Qpe - Qorig;
+end
+
 %% 1D Placement
 num_vecs_to_use = length(vecs(1,:)); % Use all the eigenvectors we're supplied
 [p1d vals_p vecs_p time_place] = place_1d_perturbed_alt(Qp,vals,vecs,num_vecs_to_use,eigs_to_correct);
